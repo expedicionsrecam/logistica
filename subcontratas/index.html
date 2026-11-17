@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#08090B">
+<title>Recam Subcontratas</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;
+  --ink:#15181E; --ink2:#3A3F4A; --yellow:#F2C200;
+  --bg:#131519; --sf:#1F2229; --surface:#1F2229; --soft:#191B21; --line:#32363F; --line2:#4A4F5B;
+  --tx:#EFEFEA; --tx2:#C6C8CF; --muted:#9BA0AB; --red:#F0695E; --shadow:0 1px 2px rgba(0,0,0,.4);
+  --mono:'IBM Plex Mono',ui-monospace,monospace; --sans:'IBM Plex Sans',system-ui,-apple-system,'Segoe UI',sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--tx);font-family:var(--sans);font-size:15px;line-height:1.4;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--yellow);outline-offset:2px}
+.mono{font-family:var(--mono)}.muted{color:var(--muted)}
+[hidden]{display:none!important}
+
+header{background:#08090B;color:#fff;border-bottom:4px solid var(--yellow);position:sticky;top:0;z-index:20;padding-top:env(safe-area-inset-top,0px)}
+.hwrap{max-width:1440px;margin:0 auto;padding:0 24px;display:flex;flex-wrap:wrap;align-items:center;gap:0 24px;min-height:56px}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none;color:#fff;padding:6px 0}
+.logo .sq{width:28px;height:28px;border-radius:6px;background:var(--yellow);color:#15181E;display:flex;align-items:center;justify-content:center}
+.logo .sq svg{width:18px;height:18px}
+.logo b{font-size:16px;letter-spacing:.14em;font-weight:700}
+.logo small{color:#B8BCC6;font-size:13px;border-left:1px solid #4A505C;padding-left:10px}
+nav{display:flex;gap:4px;min-width:0;order:3;width:100%;overflow-x:auto;scrollbar-width:none;margin-top:2px}
+nav::-webkit-scrollbar{display:none}
+nav button{background:none;border:0;color:#D0D2D8;padding:0 14px;min-height:46px;font-size:15px;border-bottom:3px solid transparent;white-space:nowrap;border-radius:6px 6px 0 0;flex:none}
+nav button:hover{color:#fff;background:#262A33}
+nav button[aria-current="page"]{background:var(--yellow);color:#15181E;font-weight:700;border-bottom-color:var(--yellow)}
+nav .nb{display:inline-block;min-width:20px;margin-left:7px;padding:1px 6px;border-radius:999px;background:#EFEFEA;color:#15181E;font:600 12px var(--mono);text-align:center;vertical-align:1px}
+nav .nb.r{background:#C92A2A;color:#fff}
+nav button[aria-current="page"] .nb{background:#15181E;color:#fff}
+.hright{margin-left:auto;display:flex;gap:8px;align-items:center;font-size:13px;color:#B8BCC6;min-width:0}
+#syncInfo{background:#262A33;border:1px solid #3A3F4A;border-radius:999px;padding:5px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;color:#D5D8DE;font-weight:500}
+.hright button{border:1px solid #4A505C;color:#fff;background:transparent;border-radius:6px;padding:7px 12px;font-size:13px;font-weight:500;white-space:nowrap}
+.hright button:hover{border-color:#fff}
+#userBtn{background:var(--yellow);color:#15181E;border-color:var(--yellow);border-radius:999px;font-weight:600}
+
+main{max-width:1440px;margin:0 auto;padding:24px;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:26px;letter-spacing:-.01em}h2{margin:0;font-size:17px}h3{margin:0;font-size:15px}
+.sub{margin:4px 0 0;color:var(--muted);font-size:14px}
+.titlebar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;box-shadow:var(--shadow)}
+.btn{min-height:44px;padding:0 16px;border-radius:8px;border:1px solid var(--line2);background:#2A2E37;color:var(--tx);font-weight:500;display:inline-flex;align-items:center;gap:8px;text-decoration:none}
+.btn:hover{border-color:var(--tx)}
+.btn-pri{background:var(--yellow);border-color:var(--yellow);color:#15181E;font-weight:600}
+.btn-dark{background:#EFEFEA;border-color:#EFEFEA;color:#15181E;font-weight:600}
+.btn-danger{color:var(--red);border-color:#7A3A35}
+.btn-sm{min-height:36px;padding:0 12px;font-size:13px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.input,select.input,textarea.input{min-height:44px;padding:0 12px;border:1px solid var(--line2);border-radius:8px;background:#15171C;min-width:0;color:var(--tx)}
+textarea.input{padding:10px 12px;width:100%;resize:vertical;line-height:1.45}
+.input:focus{border-color:var(--yellow)}
+.input::placeholder{color:#6F7480}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600;min-width:0}
+label.f .input{font-weight:400;font-size:15px}
+.hint{font-size:12px;color:var(--muted);font-weight:400}
+input[type=checkbox]{width:18px;height:18px;accent-color:var(--yellow)}
+input[type=date]{color-scheme:dark}
+
+.tiles{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.tile{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;padding:16px 18px;border-radius:12px;border:1px solid var(--line);background:var(--sf);box-shadow:var(--shadow);border-top:6px solid var(--line2);min-width:0}
+.tile:hover{border-color:var(--tx)}
+.tile b{font:700 34px/1.1 var(--mono)}.tile span{font-weight:700;font-size:15px}.tile small{color:var(--muted);font-size:13px}
+.tile.t3{border-top-color:#C92A2A}.tile.t2{border-top-color:#F28C28}.tile.t1{border-top-color:#FFD43B}.tile.ts{border-top-color:#8AA5CF}.tile.tc{border-top-color:var(--yellow)}
+.tile[aria-pressed="true"]{background:var(--yellow);border-color:var(--yellow);color:#15181E}.tile[aria-pressed="true"] small{color:#3B3A36}
+
+.agchip{display:inline-block;min-width:34px;padding:2px 9px;border-radius:999px;font-weight:700;font-family:var(--mono);font-size:13px;text-align:center;white-space:nowrap}
+.agchip.ag1{background:#FFD43B;color:#15181E}.agchip.ag2{background:#F28C28;color:#15181E}.agchip.ag3{background:#C92A2A;color:#fff}
+.agchip.prox{background:#DCE6F5;color:#15181E}.agchip.okc{background:#DCF2E3;color:#14532D}.agchip.nod{background:#E6E7EA;color:#5F5B52}.agchip.cerr{background:#2A2E37;color:var(--muted);border:1px solid var(--line2)}
+.chip{display:inline-flex;align-items:center;min-height:24px;padding:0 10px;border-radius:999px;font-size:12px;font-weight:600;white-space:nowrap}
+.chip.prom{background:#DCF2E3;color:#14532D}.chip.urg{background:#C92A2A;color:#fff}.chip.vencida{background:#FDE6CC;color:#6B3A00}.chip.sinc{background:#E6E7EA;color:#5F5B52}.chip.suI{background:#C92A2A;color:#fff}.chip.suP{background:#FFD43B;color:#15181E}.chip.conf{background:#DCF2E3;color:#14532D}.chip.arec{background:#DCE6F5;color:#15181E}
+
+.ocgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(360px,1fr));gap:14px;align-items:stretch}
+.oc{display:flex;flex-direction:column;gap:10px;border-left:8px solid var(--line2)}
+.oc.lv1{border-left-color:#FFD43B}.oc.lv2{border-left-color:#F28C28}.oc.lv3{border-left-color:#C92A2A}.oc.lvs{border-left-color:#8AA5CF}
+.och{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}.och h2{font-size:20px;overflow-wrap:anywhere}.occ{font-weight:600;overflow-wrap:anywhere;color:var(--tx2)}
+.daybig{flex:none;min-width:72px;text-align:center;border-radius:10px;padding:6px 10px;background:#2A2E37}
+.daybig b{display:block;font:700 28px/1.1 var(--mono)}.daybig span{font-size:12px}
+.daybig.ag1{background:#FFD43B;color:#15181E}.daybig.ag2{background:#F28C28;color:#15181E}.daybig.ag3{background:#C92A2A;color:#fff}.daybig.prox{background:#DCE6F5;color:#15181E}
+.ocs{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:4px}
+.ocs li{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;padding:6px 8px;border-radius:6px;background:var(--soft);border:1px solid #2B2F37;font-size:14px;min-width:0}
+.ocs .k{color:var(--muted);font-size:12px;min-width:64px}
+.oc .row{margin-top:auto}
+
+.tablebox{background:var(--sf);border:1px solid var(--line);border-radius:10px;overflow-x:auto;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+thead th{background:#262A32;text-align:left;font-size:12px;color:var(--tx2);text-transform:uppercase;letter-spacing:.04em;padding:12px 10px;white-space:nowrap;border-bottom:1px solid var(--line);position:sticky;top:0}
+tbody td{padding:9px 10px;border-bottom:1px solid #2B2F37;vertical-align:middle}
+tbody tr:hover{background:#242830}
+td.num,th.num{text-align:right;font-family:var(--mono)}
+.link{background:none;border:0;padding:0;font-family:var(--mono);font-weight:600;color:var(--yellow);text-decoration:underline;text-underline-offset:3px;text-align:left}
+.pager{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;font-size:14px;color:var(--tx2)}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line2);border-radius:8px;background:var(--soft)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:#2A2E37;padding:0 12px;min-height:36px;font-size:13px;font-weight:500;color:var(--tx2)}
+.seg button+button{border-left:1px solid var(--line2)}
+.seg button[aria-pressed="true"]{background:var(--yellow);color:#15181E}
+.formgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+.warnbox{background:#332A1A;border:1px solid #8A7320;color:#F3E3A8;border-radius:8px;padding:10px 14px;font-size:14px}
+.okbox{background:#16271C;border:1px solid #2E6B45;color:#BFE5CB;border-radius:8px;padding:10px 14px;font-size:14px}
+.errbox{background:#33211F;border:1px solid #7A3A35;color:#F6C9C4;border-radius:8px;padding:10px 14px;font-size:14px}
+.maprow{display:grid;grid-template-columns:150px minmax(0,1fr);gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid #2B2F37;font-size:14px}
+.maprow:last-child{border-bottom:0}
+
+dialog{background:var(--sf);color:var(--tx);color-scheme:dark;border:0;border-radius:12px;padding:0;max-width:680px;width:calc(100% - 32px);box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:92vh}
+dialog::backdrop{background:rgba(0,0,0,.65)}
+.dlg{padding:20px;display:flex;flex-direction:column;gap:14px}
+.chklist{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
+.chklist label{display:flex;gap:10px;align-items:flex-start;padding:6px;border-radius:6px;font-size:14px;cursor:pointer}
+.chklist label:hover{background:#262A32}
+.toast{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:#EFEFEA;color:#15181E;padding:12px 18px;border-radius:8px;font-size:14px;z-index:60;box-shadow:0 6px 20px rgba(0,0,0,.4);max-width:calc(100% - 32px)}
+
+@media (max-width:1100px){main{padding:18px;gap:16px}.hwrap{padding:0 18px}.tiles{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:760px){
+  .logo small{display:none}
+  .hright{flex:1 1 0;justify-content:flex-end}.hright .hide-m{display:none}
+  #syncInfo{font-size:12px;padding:4px 10px;max-width:34vw}
+  nav button{min-height:44px;padding:0 12px}
+  .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tile b{font-size:28px}
+  .ocgrid{grid-template-columns:1fr}
+  .titlebar>.row{width:100%}
+  .maprow{grid-template-columns:1fr;gap:4px}
+}
+@media (max-width:640px){main{padding:16px}h1{font-size:24px}}
+</style>
+</head>
+<body>
+<header>
+  <div class="hwrap">
+    <a class="logo" href="#" data-a="tab" data-v="urg" aria-label="Recam Subcontratas">
+      <span class="sq"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M3 17l5-5 4 3 8-9M15 6h5v5"/></svg></span>
+      <b>RECAM</b><small>Subcontratas</small>
+    </a>
+    <div class="hright">
+      <button type="button" id="userBtn" data-a="user">Usuario</button>
+      <span id="syncInfo">Sin datos</span>
+      <button type="button" data-a="refresh" class="hide-m">Actualizar</button>
+    </div>
+    <nav id="nav" aria-label="Secciones"></nav>
+  </div>
+</header>
+<main id="app"></main>
+<dialog id="dlg"></dialog>
+<div class="toast" id="toast" hidden></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+(function(){
+'use strict';
+/* ===== utilidades ===== */
+const $ = (s, r=document) => r.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad = n => String(n).padStart(2, '0');
+const DAY = 864e5;
+const iso = d => d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+const todayISO = () => iso(new Date());
+const dnum = s => { const p = s.split('-').map(Number); return Date.UTC(p[0], p[1]-1, p[2]) / DAY; };
+const diffDays = (a, b) => Math.round(dnum(a) - dnum(b));
+const fmtD = s => s ? s.slice(8,10) + '/' + s.slice(5,7) + '/' + s.slice(0,4) : '—';
+const fmtS = s => s ? s.slice(8,10) + '/' + s.slice(5,7) : '—';
+const norm = s => String(s ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+const store = {
+  get(k, d){ try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e){ return d; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch(e){ return false; } },
+  del(k){ try { localStorage.removeItem(k); } catch(e){} }
+};
+function pDate(v){
+  if (v == null || v === '') return '';
+  if (v instanceof Date && !isNaN(v)) return iso(v);
+  if (typeof v === 'number') { if (v > 20000 && v < 80000) { const d = new Date(Date.UTC(1899,11,30) + Math.round(v)*DAY); return d.getUTCFullYear() + '-' + pad(d.getUTCMonth()+1) + '-' + pad(d.getUTCDate()); } return ''; }
+  const s = String(v).trim(); let m;
+  if ((m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s))) return m[1] + '-' + m[2] + '-' + m[3];
+  if ((m = /^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})/.exec(s))) { let y = +m[3]; if (y < 100) y += 2000; return y + '-' + pad(+m[2]) + '-' + pad(+m[1]); }
+  return '';
+}
+const tf = v => v === true || ['true','si','s','x','1','yes','verdadero','cert'].includes(norm(v));
+
+/* ===== columnas del RP (cabeceras en catalán o castellano) ===== */
+const FIELDS = [
+  {k:'oc',    l:'Número de pedido',        a:['numero','numpedido','npedido','pedidocompra','pedcompra','pedido','oc','po','ordencompra']},
+  {k:'tipo',  l:'Tipo',                    a:['tipus','tipo','tipopedido']},
+  {k:'prov',  l:'Proveedor',               a:['proveidor','proveedor','subcontratista','subcontrata','nombreproveedor','supplier','vendor']},
+  {k:'comp',  l:'Comprador',               a:['comprador','compradora','buyer']},
+  {k:'fped',  l:'Fecha de compra',         a:['dcompra','fechacompra','fechapedido','fechaoc','fcompra','fped','fechaemision']},
+  {k:'fprev', l:'Fecha prevista (Previst)', a:['previst','fechaprevista','fechaentregaprevista','fechaentrega','entregaprevista','fentrega','fprevista','fechaprometida','prevista']},
+  {k:'frec',  l:'Fecha de recepción',      a:['drecep','drecepcio','fecharecepcion','frecepcion','fecharecep','recepcion','recibido']},
+  {k:'urg',   l:'Urgente',                 a:['urgent','urgente','urgencia','prioridad']},
+  {k:'conf',  l:'Confirmado por proveedor', a:['confirmat','confirmado','confirmada']},
+  {k:'arec',  l:'A Recam',                 a:['arecam']},
+  {k:'estado',l:'Estado',                  a:['estat','estado','situacion','status']},
+  {k:'alb',   l:'Albarán',                 a:['albara','albaran','nalbaran']},
+  {k:'cda',   l:'CDA (comanda)',           a:['cda','comanda','ncda','ordenfabricacion']},
+  {k:'su',    l:'SU (servicio)',           a:['su','servicio','servei']},
+  {k:'obs',   l:'Observaciones',           a:['observacions','observaciones','comentarios','notas','obs']}
+];
+function matchField(h){
+  const n = norm(h); if (!n) return null;
+  for (const f of FIELDS) if (f.a.includes(n)) return f.k;
+  for (const f of FIELDS) if (f.a.some(a => a.length >= 6 && n.includes(a))) return f.k;
+  return null;
+}
+function autoMap(headers){
+  const map = {};
+  FIELDS.forEach(f => {
+    let found = -1;
+    for (const a of f.a) { found = headers.findIndex(h => norm(h) === a); if (found >= 0) break; }
+    if (found < 0) for (const a of f.a) { if (a.length < 6) continue; found = headers.findIndex(h => norm(h).includes(a)); if (found >= 0) break; }
+    if (found >= 0) map[f.k] = headers[found];
+  });
+  return map;
+}
+function detect(values){
+  let best = 0, bs = -1;
+  for (let i = 0; i < Math.min(15, values.length); i++) {
+    const s = (values[i] || []).reduce((a, c) => a + (matchField(c) ? 1 : 0), 0);
+    if (s > bs) { bs = s; best = i; }
+  }
+  const headers = (values[best] || []).map(x => String(x ?? '').trim());
+  return {headers, data: values.slice(best + 1).filter(r => r.some(c => c !== '' && c != null))};
+}
+
+/* ===== estado ===== */
+const S = {
+  cfg: Object.assign({url:'', token:'', map:{}, reclDays:3, soon:3}, store.get('rsub_cfg', {})),
+  raw: store.get('rsub_raw', null),
+  seg: store.get('rsub_seg', []),
+  queue: store.get('rsub_queue', []),
+  contacts: store.get('rsub_contacts', {}),
+  cqueue: store.get('rsub_cqueue', []),
+  user: store.get('rsub_user', ''),
+  rows: [], byKey: new Map(),
+  ui: {tab:'urg', f:'all', q:'', prov:'', comp:'', lvl:'', est:'pend', lim:60, limL:150},
+  busy: false, msg: ''
+};
+const saveCfg = () => store.set('rsub_cfg', S.cfg);
+
+function currentMap(headers){
+  const auto = autoMap(headers), m = {};
+  FIELDS.forEach(f => {
+    const o = S.cfg.map[f.k];
+    if (o === '-') return;
+    if (o && headers.includes(o)) m[f.k] = o; else if (auto[f.k]) m[f.k] = auto[f.k];
+  });
+  return m;
+}
+function build(){
+  S.rows = []; S.byKey = new Map();
+  if (!S.raw) return;
+  const headers = S.raw.headers, map = currentMap(headers), idx = {};
+  FIELDS.forEach(f => { idx[f.k] = map[f.k] ? headers.indexOf(map[f.k]) : -1; });
+  const t = todayISO(), soonN = +S.cfg.soon || 0;
+  S.raw.data.forEach((r, i) => {
+    const g = k => idx[k] >= 0 ? r[idx[k]] : '';
+    const txt = k => String(g(k) ?? '').trim();
+    const oc = txt('oc'), prov = txt('prov');
+    if (!prov && !oc) return;
+    const fprev = pDate(g('fprev')), frec = pDate(g('frec')), estado = txt('estado');
+    const m = /pendent\s*\(\s*(\d+)\s*\/\s*(\d+)\s*\)/i.exec(estado);
+    const rc = m ? +m[1] : null, tot = m ? +m[2] : null;
+    const cancelled = /anulad|cancel/i.test(estado);
+    const closed = cancelled || (!!frec && !(m && rc < tot));
+    const diff = fprev ? diffDays(t, fprev) : null;
+    const lvl = diff == null ? 0 : diff > 10 ? 3 : diff >= 6 ? 2 : diff >= 1 ? 1 : 0;
+    const su = norm(g('su'));
+    const row = {
+      i, oc, prov: prov || '(sin proveedor)', comp: txt('comp'), tipo: txt('tipo'), cda: txt('cda'), alb: txt('alb'), obs: txt('obs'), estado,
+      rc, tot, partial: !!frec && !!m && rc < tot,
+      fped: pDate(g('fped')), fprev, frec, urg: tf(g('urg')), conf: tf(g('conf')), arec: tf(g('arec')),
+      su: su === 'instant' ? 'Instant' : su === 'preferent' ? 'Preferent' : txt('su'),
+      closed, diff, lvl, nodate: !fprev,
+      soon: !closed && diff != null && diff <= 0 && diff >= -soonN
+    };
+    row.key = oc || ('r' + i + '|' + row.cda);
+    S.rows.push(row); S.byKey.set(row.key, row);
+  });
+  applySeg();
+}
+function applySeg(){
+  const by = new Map();
+  S.seg.forEach(e => { if (!by.has(e.key)) by.set(e.key, []); by.get(e.key).push(e); });
+  const t = todayISO(), rd = +S.cfg.reclDays || 0;
+  S.rows.forEach(r => {
+    const list = (by.get(r.key) || []).slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+    r.hist = list;
+    r.last = list.length ? String(list[0].ts).slice(0, 10) : '';
+    const pr = list.find(e => e.promesa);
+    r.prom = pr ? pDate(pr.promesa) : '';
+    r.promOk = !!r.prom && r.prom >= t;
+    r.toClaim = !r.closed && (r.lvl >= 1) && !r.promOk && (!r.last || diffDays(t, r.last) >= rd);
+  });
+}
+const prio = r => (r.lvl * 1000) + (r.urg ? 500 : 0) + (r.su === 'Instant' ? 300 : r.su === 'Preferent' ? 100 : 0) + (r.diff || 0);
+const openRows = () => S.rows.filter(r => !r.closed);
+const emailOf = p => (S.contacts[p] || {}).email || '';
+
+/* ===== persistencia y red ===== */
+function persistRaw(){ if (!store.set('rsub_raw', S.raw)) toast('Los datos son demasiado grandes para guardarlos en este equipo; se recargarán desde el Sheet.'); }
+function setRaw(values, src){
+  const d = detect(values);
+  S.raw = {headers: d.headers, data: d.data, when: new Date().toISOString(), src};
+  persistRaw(); build();
+}
+async function pull(silent){
+  const u = S.cfg.url; if (!u) { if (!silent) toast('Falta la URL del Apps Script en Datos.'); return; }
+  S.busy = true; S.msg = 'Sincronizando…'; paintHead();
+  try {
+    await flush();
+    const r = await fetch(u + (u.includes('?') ? '&' : '?') + 'action=read&token=' + encodeURIComponent(S.cfg.token || ''));
+    const j = await r.json();
+    if (j.error) throw new Error(j.error);
+    const d = detect(j.values || []);
+    S.raw = {headers: d.headers, data: d.data, when: new Date().toISOString(), src: 'sheet'};
+    persistRaw();
+    const srv = j.seg || [], ids = new Set(srv.map(e => e.id));
+    S.seg = srv.concat(S.queue.filter(e => !ids.has(e.id)));
+    store.set('rsub_seg', S.seg);
+    const pend = new Set(S.cqueue.map(c => c.prov)), cs = {};
+    (j.provs || []).forEach(p => { cs[p.prov] = {email:p.email || '', tel:p.tel || ''}; });
+    pend.forEach(p => { if (S.contacts[p]) cs[p] = S.contacts[p]; });
+    S.contacts = cs; store.set('rsub_contacts', cs);
+    S.msg = ''; build();
+    if (!silent) toast('Datos actualizados desde el Sheet.');
+  } catch(e) { S.msg = ''; toast('No se pudo leer el Sheet: ' + e.message); }
+  S.busy = false; render();
+}
+async function flush(){
+  if (!S.cfg.url || (!S.queue.length && !S.cqueue.length)) return;
+  try {
+    const r = await fetch(S.cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({action:'push', token:S.cfg.token || '', entries:S.queue, provs:S.cqueue})});
+    const j = await r.json(); if (j.error) throw new Error(j.error);
+    S.queue = []; S.cqueue = []; store.set('rsub_queue', S.queue); store.set('rsub_cqueue', S.cqueue);
+  } catch(e) { /* se reintenta en la próxima sincronización */ }
+}
+async function afterLocalChange(){
+  applySeg(); render();
+  if (S.cfg.url) { await flush(); if (S.queue.length || S.cqueue.length) toast('Guardado en este equipo; no se pudo escribir en el Sheet todavía (se reintentará).'); paintHead(); }
+}
+function addSeg(entries){
+  entries.forEach(e => { S.seg.push(e); S.queue.push(e); });
+  store.set('rsub_seg', S.seg); store.set('rsub_queue', S.queue);
+  return afterLocalChange();
+}
+function saveProv(prov, email, tel){
+  S.contacts[prov] = {email, tel}; store.set('rsub_contacts', S.contacts);
+  S.cqueue = S.cqueue.filter(c => c.prov !== prov); S.cqueue.push({prov, email, tel}); store.set('rsub_cqueue', S.cqueue);
+  return afterLocalChange();
+}
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* ===== piezas visuales ===== */
+function lvlChip(r){
+  if (r.closed) return '<span class="agchip cerr">' + (r.frec ? 'Recibido' : 'Cerrado') + '</span>';
+  if (r.nodate) return '<span class="agchip nod">Sin fecha</span>';
+  if (r.lvl) return '<span class="agchip ag' + r.lvl + '">' + r.diff + ' d</span>';
+  if (r.soon) return '<span class="agchip prox">' + (r.diff === 0 ? 'hoy' : 'en ' + (-r.diff) + ' d') + '</span>';
+  return '<span class="agchip okc">En plazo</span>';
+}
+function noteChips(r){
+  let h = '';
+  if (r.urg) h += '<span class="chip urg">URGENTE</span> ';
+  if (r.su === 'Instant') h += '<span class="chip suI">Instant</span> ';
+  else if (r.su === 'Preferent') h += '<span class="chip suP">Preferent</span> ';
+  if (r.promOk) h += '<span class="chip prom">Prometido ' + fmtS(r.prom) + '</span> ';
+  else if (r.prom) h += '<span class="chip vencida">Promesa vencida ' + fmtS(r.prom) + '</span> ';
+  if (!r.hist || !r.hist.length) { if (r.lvl >= 1) h += '<span class="chip sinc">Sin reclamar</span>'; }
+  return h;
+}
+function toast(m){ const t = $('#toast'); t.textContent = m; t.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => { t.hidden = true; }, 4200); }
+const shortObs = r => (r.obs && !/^env[ií]o de facturas/i.test(r.obs)) ? r.obs : '';
+
+/* ===== vistas ===== */
+const TABS = [['urg','Urgencias'],['prov','Proveedores'],['recl','Reclamaciones'],['lin','Todos los pedidos'],['dat','Datos']];
+function filterF(list, f){
+  switch (f) {
+    case 'l3': return list.filter(r => r.lvl === 3);
+    case 'l2': return list.filter(r => r.lvl === 2);
+    case 'l1': return list.filter(r => r.lvl === 1);
+    case 'soon': return list.filter(r => r.soon);
+    case 'claim': return list.filter(r => r.toClaim);
+    default: return list.filter(r => r.lvl >= 1 || r.soon || r.urg);
+  }
+}
+function qMatch(r){
+  if (S.ui.prov && r.prov !== S.ui.prov) return false;
+  if (S.ui.comp && r.comp !== S.ui.comp) return false;
+  const q = norm(S.ui.q); if (!q) return true;
+  return norm([r.prov, r.oc, r.cda, r.alb, r.comp, r.obs].join(' ')).includes(q);
+}
+function optsOf(vals, cur, all){
+  const ps = [...new Set(vals.filter(Boolean))].sort((a, b) => a.localeCompare(b, 'es'));
+  return '<option value="">' + all + '</option>' + ps.map(p => '<option value="' + esc(p) + '"' + (p === cur ? ' selected' : '') + '>' + esc(p) + '</option>').join('');
+}
+const provOpts = cur => optsOf(S.rows.map(r => r.prov), cur, 'Todos los proveedores');
+const compOpts = cur => optsOf(S.rows.map(r => r.comp), cur, 'Todos los compradores');
+function noData(){
+  return '<div class="empty"><h2>Todavía no hay datos del RP</h2><p>Conecta el Sheet <b>Master subcontratas</b> o importa el Excel del día desde <b>Datos</b>.</p>'
+    + '<div class="row" style="justify-content:center"><button class="btn btn-pri" data-a="tab" data-v="dat">Ir a Datos</button><button class="btn" data-a="demo">Ver con datos de ejemplo</button></div></div>';
+}
+function demoBanner(){ return S.raw && S.raw.src === 'demo' ? '<div class="warnbox"><b>Datos de ejemplo.</b> Nada de esto es real; conecta el Sheet o importa tu Excel en <button class="link" data-a="tab" data-v="dat">Datos</button>.</div>' : ''; }
+function filters(){
+  return '<div class="row"><input class="input" id="q" data-i="q" type="search" placeholder="Buscar proveedor, pedido, CDA, albarán…" value="' + esc(S.ui.q) + '" style="flex:1 1 260px">'
+    + '<select class="input" data-c="prov" style="flex:1 1 220px">' + provOpts(S.ui.prov) + '</select>'
+    + '<select class="input" data-c="comp" style="flex:1 1 180px">' + compOpts(S.ui.comp) + '</select></div>';
+}
+
+function viewUrg(){
+  if (!S.rows.length) return noData();
+  const o = openRows();
+  const c = {l3:o.filter(r => r.lvl === 3).length, l2:o.filter(r => r.lvl === 2).length, l1:o.filter(r => r.lvl === 1).length, soon:o.filter(r => r.soon).length, claim:o.filter(r => r.toClaim).length};
+  let list = filterF(o, S.ui.f).filter(qMatch).sort((a, b) => prio(b) - prio(a));
+  const total = list.length; list = list.slice(0, S.ui.lim);
+  const tile = (f, cls, n, t, s) => '<button class="tile ' + cls + '" data-a="flt" data-v="' + f + '" aria-pressed="' + (S.ui.f === f) + '"><b>' + n + '</b><span>' + t + '</span><small>' + s + '</small></button>';
+  let h = demoBanner() + '<div class="titlebar"><div><h1>Urgencias</h1><p class="sub">Pedidos de subcontratación sin recibir, ordenados por retraso sobre la fecha prevista. Los que tienen promesa vigente no cuentan como «por reclamar».</p></div></div>'
+    + '<div class="tiles">'
+    + tile('l3', 't3', c.l3, 'Críticos', 'más de 10 días')
+    + tile('l2', 't2', c.l2, 'Retraso alto', '6 a 10 días')
+    + tile('l1', 't1', c.l1, 'Retraso', '1 a 5 días')
+    + tile('soon', 'ts', c.soon, 'Vencen pronto', 'en ' + S.cfg.soon + ' días o menos')
+    + tile('claim', 'tc', c.claim, 'Por reclamar hoy', 'sin promesa ni contacto reciente')
+    + '</div>' + filters()
+    + (S.ui.f !== 'all' ? '<div><button class="btn btn-sm" data-a="flt" data-v="all">Quitar filtro del cuadro</button></div>' : '');
+  if (!list.length) return h + '<div class="empty">No hay pedidos con este filtro.</div>';
+  h += '<div class="ocgrid">' + list.map(card).join('') + '</div>';
+  if (total > list.length) h += '<div class="pager"><span>Mostrando ' + list.length + ' de ' + total + '</span><button class="btn" data-a="more">Mostrar más</button></div>';
+  return h;
+}
+function card(r){
+  const cls = r.lvl ? 'lv' + r.lvl : (r.soon ? 'lvs' : '');
+  const dcls = r.lvl ? 'ag' + r.lvl : (r.soon ? 'prox' : '');
+  const big = r.nodate ? '—' : (r.diff > 0 ? r.diff : r.diff === 0 ? 'hoy' : -r.diff);
+  const small = r.nodate ? 'sin fecha' : r.diff > 0 ? 'días tarde' : r.diff === 0 ? 'vence' : 'días restan';
+  const k = esc(r.key), ob = shortObs(r);
+  return '<article class="card oc ' + cls + '"><div class="och"><div><h2>' + esc(r.prov) + '</h2><div class="occ mono">Pedido ' + esc(r.oc) + (r.cda ? ' · CDA ' + esc(r.cda) : '') + '</div></div><div class="daybig ' + dcls + '"><b>' + big + '</b><span>' + small + '</span></div></div>'
+    + '<ul class="ocs">'
+    + '<li><span class="k">Previsto</span><span class="mono">' + fmtD(r.fprev) + '</span>' + (r.conf ? '<span class="chip conf">Confirmado</span>' : '<span class="chip sinc">Sin confirmar</span>') + (r.arec ? '<span class="chip arec">A Recam</span>' : '') + '</li>'
+    + '<li><span class="k">Estado</span><span>' + esc(r.estado || '—') + '</span>' + (r.alb ? '<span class="muted">albarán ' + esc(r.alb) + '</span>' : '') + (r.partial ? '<span class="chip vencida">Recepción parcial</span>' : '') + '</li>'
+    + '<li><span class="k">Compra</span><span class="mono">' + fmtD(r.fped) + '</span>' + (r.comp ? '<span class="muted">' + esc(r.comp) + '</span>' : '') + '</li>'
+    + (ob ? '<li><span class="k">Obs.</span><span>' + esc(ob) + '</span></li>' : '')
+    + '<li><span class="k">Seguimiento</span>' + (noteChips(r) || '<span class="muted">—</span>') + (r.last ? '<span class="muted">último contacto ' + fmtD(r.last) + '</span>' : '') + '</li>'
+    + '</ul>'
+    + '<div class="row"><button class="btn btn-pri btn-sm" data-a="claim1" data-k="' + k + '">Reclamar</button><button class="btn btn-sm" data-a="contact" data-k="' + k + '">Registrar contacto</button></div></article>';
+}
+
+function provGroups(){
+  const m = new Map();
+  openRows().forEach(r => {
+    if (!m.has(r.prov)) m.set(r.prov, {prov:r.prov, n:0, late:0, crit:0, max:0, claim:0, soon:0, last:''});
+    const g = m.get(r.prov); g.n++; if (r.lvl >= 1) g.late++; if (r.lvl === 3) g.crit++; if (r.diff != null && r.diff > g.max) g.max = r.diff;
+    if (r.toClaim) g.claim++; if (r.soon) g.soon++; if (r.last > g.last) g.last = r.last;
+  });
+  return [...m.values()].sort((a, b) => (b.crit - a.crit) || (b.max - a.max) || (b.late - a.late));
+}
+function viewProv(){
+  if (!S.rows.length) return noData();
+  const gs = provGroups();
+  return demoBanner() + '<div class="titlebar"><div><h1>Proveedores</h1><p class="sub">Pedidos sin recibir por proveedor. El email de contacto se guarda en el Sheet (hoja «Contactos proveedores») y lo usan las reclamaciones.</p></div></div>'
+    + '<div class="tablebox"><table><thead><tr><th>Proveedor</th><th class="num">Abiertos</th><th class="num">Atrasados</th><th class="num">Críticos</th><th>Peor retraso</th><th class="num">Vencen pronto</th><th>Contacto</th><th>Último contacto</th><th class="num">Por reclamar</th><th></th></tr></thead><tbody>'
+    + gs.map(g => '<tr><td><button class="link" data-a="verProv" data-p="' + esc(g.prov) + '">' + esc(g.prov) + '</button></td><td class="num">' + g.n + '</td><td class="num">' + g.late + '</td><td class="num">' + g.crit + '</td>'
+      + '<td>' + (g.max > 0 ? '<span class="agchip ag' + (g.max > 10 ? 3 : g.max >= 6 ? 2 : 1) + '">' + g.max + ' d</span>' : '<span class="agchip okc">En plazo</span>') + '</td>'
+      + '<td class="num">' + g.soon + '</td><td>' + (emailOf(g.prov) ? esc(emailOf(g.prov)) : '<span class="muted">sin email</span>') + ' <button class="link" data-a="editProv" data-p="' + esc(g.prov) + '" style="font-size:12px">editar</button></td>'
+      + '<td>' + (g.last ? fmtD(g.last) : '<span class="muted">nunca</span>') + '</td><td class="num"><b>' + g.claim + '</b></td>'
+      + '<td><button class="btn btn-sm btn-pri" data-a="claimProv" data-p="' + esc(g.prov) + '">Reclamar</button></td></tr>').join('')
+    + '</tbody></table></div>';
+}
+
+function viewRecl(){
+  if (!S.rows.length) return noData();
+  const gs = provGroups().filter(g => g.claim > 0);
+  const log = S.seg.slice().sort((a, b) => String(b.ts).localeCompare(String(a.ts))).slice(0, 150);
+  return demoBanner() + '<div class="titlebar"><div><h1>Reclamaciones</h1><p class="sub">Qué hay que reclamar hoy y qué se ha hecho ya. «Por reclamar» = pedido atrasado, sin promesa vigente y sin contacto en los últimos ' + S.cfg.reclDays + ' días.</p></div></div>'
+    + '<div class="grid2"><section class="card"><h2>Por reclamar hoy</h2><div style="margin-top:10px">'
+    + (gs.length ? gs.map(g => '<div class="row" style="justify-content:space-between;padding:9px 0;border-bottom:1px solid #2B2F37"><div><b>' + esc(g.prov) + '</b><div class="muted" style="font-size:13px">' + g.claim + ' pedidos · peor retraso ' + g.max + ' d' + (emailOf(g.prov) ? '' : ' · sin email guardado') + '</div></div><button class="btn btn-sm btn-pri" data-a="claimProv" data-p="' + esc(g.prov) + '">Redactar</button></div>').join('') : '<div class="okbox">Nada pendiente de reclamar ahora mismo.</div>')
+    + '</div></section>'
+    + '<section class="card"><h2>Últimos contactos</h2><div style="margin-top:10px">'
+    + (log.length ? '<div class="tablebox" style="box-shadow:none;max-height:460px"><table><thead><tr><th>Fecha</th><th>Proveedor</th><th>Pedido</th><th>Tipo</th><th>Nota</th><th>Promesa</th><th>Quién</th></tr></thead><tbody>'
+      + log.map(e => '<tr><td class="mono">' + fmtD(String(e.ts).slice(0, 10)) + '</td><td>' + esc(e.prov) + '</td><td class="mono">' + esc(e.oc) + '</td><td>' + esc(e.tipo) + '</td><td>' + esc(e.nota) + '</td><td class="mono">' + (e.promesa ? fmtD(pDate(e.promesa)) : '—') + '</td><td>' + esc(e.user) + '</td></tr>').join('') + '</tbody></table></div>'
+      : '<div class="empty">Aún no hay contactos registrados.</div>')
+    + '</div></section></div>';
+}
+
+function viewLin(){
+  if (!S.rows.length) return noData();
+  let list = S.rows.filter(qMatch);
+  if (S.ui.est === 'pend') list = list.filter(r => !r.closed);
+  else if (S.ui.est === 'cerr') list = list.filter(r => r.closed);
+  if (S.ui.lvl === '3') list = list.filter(r => r.lvl === 3);
+  else if (S.ui.lvl === '2') list = list.filter(r => r.lvl === 2);
+  else if (S.ui.lvl === '1') list = list.filter(r => r.lvl === 1);
+  else if (S.ui.lvl === 'ok') list = list.filter(r => r.lvl === 0);
+  list.sort((a, b) => S.ui.est === 'cerr' ? String(b.frec).localeCompare(String(a.frec)) : prio(b) - prio(a));
+  const total = list.length; list = list.slice(0, S.ui.limL);
+  const sg = (v, t) => '<button aria-pressed="' + (S.ui.est === v) + '" data-a="est" data-v="' + v + '">' + t + '</button>';
+  const so = (v, t) => '<option value="' + v + '"' + (S.ui.lvl === v ? ' selected' : '') + '>' + t + '</option>';
+  return demoBanner() + '<div class="titlebar"><div><h1>Todos los pedidos</h1><p class="sub">' + S.rows.length + ' pedidos cargados del RP.</p></div></div>'
+    + filters()
+    + '<div class="row"><select class="input" data-c="lvl"><option value="">Todo retraso</option>' + so('3', 'Críticos (+10 d)') + so('2', '6 a 10 d') + so('1', '1 a 5 d') + so('ok', 'En plazo') + '</select>'
+    + '<div class="seg">' + sg('pend', 'Sin recibir') + sg('cerr', 'Recibidos') + sg('all', 'Todos') + '</div></div>'
+    + '<div class="tablebox"><table><thead><tr><th>Nivel</th><th>Pedido</th><th>Proveedor</th><th>Comprador</th><th>CDA</th><th>Estado</th><th>Compra</th><th>Previsto</th><th>Recibido</th><th>Marcas</th><th>Seguimiento</th><th></th></tr></thead><tbody>'
+    + (list.length ? list.map(r => '<tr><td>' + lvlChip(r) + '</td><td class="mono">' + esc(r.oc) + '</td><td>' + esc(r.prov) + '</td><td>' + esc(r.comp) + '</td><td class="mono">' + esc(r.cda) + '</td><td>' + esc(r.estado) + '</td><td class="mono">' + fmtS(r.fped) + '</td><td class="mono">' + fmtS(r.fprev) + '</td><td class="mono">' + fmtS(r.frec) + '</td>'
+      + '<td>' + (r.conf ? '<span class="chip conf">Conf.</span> ' : '') + (r.arec ? '<span class="chip arec">A Recam</span>' : '') + '</td><td>' + noteChips(r) + (r.last ? '<span class="muted"> ' + fmtS(r.last) + '</span>' : '') + '</td>'
+      + '<td style="white-space:nowrap">' + (r.closed ? '' : '<button class="btn btn-sm" data-a="contact" data-k="' + esc(r.key) + '">Contacto</button> <button class="btn btn-sm btn-pri" data-a="claim1" data-k="' + esc(r.key) + '">Reclamar</button>') + '</td></tr>').join('') : '<tr><td colspan="12" class="muted" style="text-align:center;padding:24px">Sin resultados.</td></tr>')
+    + '</tbody></table></div>'
+    + (total > list.length ? '<div class="pager"><span>Mostrando ' + list.length + ' de ' + total + '</span><button class="btn" data-a="moreL">Mostrar más</button></div>' : '');
+}
+
+function viewDat(){
+  const raw = S.raw, headers = raw ? raw.headers : [], map = raw ? currentMap(headers) : {};
+  const missing = ['oc', 'prov', 'fprev'].filter(k => !map[k]).map(k => FIELDS.find(f => f.k === k).l);
+  const nOpen = S.rows.filter(r => !r.closed).length;
+  return '<div class="titlebar"><div><h1>Datos</h1><p class="sub">Origen: hoja <b>Master subcontratas</b> (Drive de exteriorsrecam@gmail.com) o Excel importado a mano.</p></div></div>'
+    + (raw ? '<div class="okbox">' + S.rows.length + ' pedidos cargados (' + nOpen + ' sin recibir) · origen: ' + ({sheet:'Google Sheet', file:'archivo importado', demo:'datos de ejemplo'}[raw.src] || raw.src) + ' · ' + new Date(raw.when).toLocaleString('es-ES') + '</div>' : '<div class="warnbox">Aún no hay datos cargados.</div>')
+    + (missing.length ? '<div class="errbox">No se han reconocido estas columnas imprescindibles: <b>' + missing.join(', ') + '</b>. Asígnalas en «Columnas» más abajo.</div>' : '')
+    + '<div class="grid2">'
+    + '<section class="card"><h2>Conexión con el Sheet</h2><p class="sub">Pega la URL de la aplicación web del Apps Script (instrucciones en <span class="mono">Code.gs</span>). Se lee al abrir la página, con Actualizar y cada 5 minutos.</p>'
+    + '<div class="formgrid" style="margin-top:12px"><label class="f">URL del Apps Script<input class="input mono" id="cfgUrl" value="' + esc(S.cfg.url) + '" placeholder="https://script.google.com/macros/s/…/exec"></label><label class="f">Clave (opcional)<input class="input" id="cfgTok" type="password" value="' + esc(S.cfg.token) + '" autocomplete="off"><span class="hint">Debe coincidir con TOKEN en el script.</span></label></div>'
+    + '<div class="row" style="margin-top:12px"><button class="btn btn-pri" data-a="saveUrl">Guardar y actualizar</button></div></section>'
+    + '<section class="card"><h2>Importar Excel / CSV</h2><p class="sub">Alternativa sin conexión: sube el archivo del RP del día.</p>'
+    + '<div class="row" style="margin-top:12px"><input class="input" type="file" id="file" accept=".xlsx,.xls,.csv" style="flex:1 1 220px"></div>'
+    + '<div class="row" style="margin-top:12px"><button class="btn" data-a="demo">Cargar datos de ejemplo</button><button class="btn btn-danger" data-a="clear">Borrar datos de este equipo</button></div></section>'
+    + '<section class="card"><h2>Criterios</h2><div class="formgrid" style="margin-top:12px"><label class="f">Días entre reclamaciones<input class="input" type="number" min="0" max="30" data-c="reclDays" value="' + S.cfg.reclDays + '"><span class="hint">Un pedido contactado hace menos días no sale como «por reclamar».</span></label>'
+    + '<label class="f">«Vence pronto» (días)<input class="input" type="number" min="0" max="30" data-c="soon" value="' + S.cfg.soon + '"></label></div>'
+    + '<p class="sub" style="margin-top:12px">Retraso contra la fecha «Previst»: <span class="agchip ag1">1–5 d</span> <span class="agchip ag2">6–10 d</span> <span class="agchip ag3">+10 d</span>.</p>'
+    + '<p class="sub">Un pedido cuenta como <b>recibido</b> cuando tiene fecha en «D.Recep.» y su estado no es «Pendent (x/y)» con x menor que y. Sin fecha de recepción, está abierto.</p></section>'
+    + '<section class="card"><h2>Columnas</h2><p class="sub">Se reconocen por el nombre de la cabecera; corrige aquí lo que no coincida.</p><div style="margin-top:8px">'
+    + (raw ? FIELDS.map(f => '<div class="maprow"><span>' + f.l + '</span><select class="input" data-c="map" data-f="' + f.k + '"><option value="">(automático' + (map[f.k] ? ': ' + esc(map[f.k]) : ': no encontrada') + ')</option><option value="-"' + (S.cfg.map[f.k] === '-' ? ' selected' : '') + '>— no usar —</option>' + headers.filter(Boolean).map(h => '<option value="' + esc(h) + '"' + (S.cfg.map[f.k] === h ? ' selected' : '') + '>' + esc(h) + '</option>').join('') + '</select></div>').join('') : '<div class="empty">Carga datos para ver las columnas.</div>')
+    + '</div></section></div>';
+}
+const VIEWS = {urg:viewUrg, prov:viewProv, recl:viewRecl, lin:viewLin, dat:viewDat};
+
+/* ===== pintado ===== */
+function paintHead(){
+  const o = openRows(), late = o.filter(r => r.lvl >= 1).length, claim = o.filter(r => r.toClaim).length;
+  $('#nav').innerHTML = TABS.map(t => '<button data-a="tab" data-v="' + t[0] + '"' + (S.ui.tab === t[0] ? ' aria-current="page"' : '') + '>' + t[1]
+    + (t[0] === 'urg' && late ? '<span class="nb r">' + late + '</span>' : '') + (t[0] === 'recl' && claim ? '<span class="nb">' + claim + '</span>' : '') + '</button>').join('');
+  $('#userBtn').textContent = S.user ? S.user : 'Usuario';
+  const un = S.queue.length + S.cqueue.length;
+  $('#syncInfo').textContent = S.msg || (S.raw ? (S.raw.src === 'sheet' ? 'Sheet · ' : S.raw.src === 'demo' ? 'Ejemplo · ' : 'Archivo · ') + new Date(S.raw.when).toLocaleString('es-ES', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'}) + (un ? ' · ' + un + ' sin enviar' : '') : 'Sin datos');
+}
+function render(){
+  const a = document.activeElement, id = a && a.id, pos = a && a.selectionStart;
+  paintHead();
+  $('#app').innerHTML = VIEWS[S.ui.tab]();
+  if (id) { const el = document.getElementById(id); if (el && el !== document.activeElement) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch(e){} } }
+}
+
+/* ===== diálogos ===== */
+const dlg = () => $('#dlg');
+function openD(html){ dlg().innerHTML = '<div class="dlg">' + html + '</div>'; if (!dlg().open) dlg().showModal(); }
+function closeD(){ if (dlg().open) dlg().close(); }
+function askUser(then){
+  openD('<h2>¿Quién eres?</h2><p class="sub">Se guarda en este equipo y firma los contactos y las reclamaciones.</p><label class="f">Nombre<input class="input" id="uName" value="' + esc(S.user) + '" autocomplete="name"></label><div class="row" style="justify-content:flex-end"><button class="btn" data-a="close">Cancelar</button><button class="btn btn-pri" data-a="saveUser">Guardar</button></div>');
+  askUser.then = then;
+}
+function openContact(key){
+  const r = S.byKey.get(key); if (!r) return;
+  openD('<h2>Registrar contacto</h2><p class="sub">' + esc(r.prov) + ' · pedido ' + esc(r.oc) + (r.cda ? ' · CDA ' + esc(r.cda) : '') + '</p>'
+    + '<input type="hidden" id="cKey" value="' + esc(key) + '">'
+    + '<div class="formgrid"><label class="f">Tipo<select class="input" id="cTipo"><option>Llamada</option><option>Email</option><option>Visita</option><option>Otro</option></select></label>'
+    + '<label class="f">Nueva fecha prometida<input class="input" type="date" id="cProm"><span class="hint">Si la dejas vacía no se registra promesa.</span></label></div>'
+    + '<label class="f">Nota<textarea class="input" id="cNota" rows="3" placeholder="Qué han dicho, con quién has hablado…"></textarea></label>'
+    + '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="close">Cancelar</button><button class="btn btn-pri" data-a="saveContact">Guardar</button></div>');
+}
+function openProvEdit(prov){
+  const c = S.contacts[prov] || {};
+  openD('<h2>Contacto de ' + esc(prov) + '</h2><div class="formgrid"><label class="f">Email de compras / comercial<input class="input" id="pvMail" type="email" value="' + esc(c.email || '') + '" placeholder="varios separados por ;"></label><label class="f">Teléfono<input class="input" id="pvTel" value="' + esc(c.tel || '') + '"></label></div>'
+    + '<input type="hidden" id="pvName" value="' + esc(prov) + '"><div class="row" style="justify-content:flex-end"><button class="btn" data-a="close">Cancelar</button><button class="btn btn-pri" data-a="saveProvEdit">Guardar</button></div>');
+}
+let CL = null; /* estado del diálogo de reclamación */
+function openClaim(prov, pre){
+  const lines = openRows().filter(r => r.prov === prov && (r.lvl >= 1 || r.soon || r.urg || (pre && pre.includes(r.key)))).sort((a, b) => prio(b) - prio(a));
+  if (!lines.length) { toast('Ese proveedor no tiene pedidos atrasados.'); return; }
+  CL = {prov, lines, sel: new Set(pre && pre.length ? pre : lines.filter(r => r.toClaim).map(r => r.key))};
+  if (!CL.sel.size) lines.filter(r => r.lvl >= 1).forEach(r => CL.sel.add(r.key));
+  if (!CL.sel.size) lines.forEach(r => CL.sel.add(r.key));
+  openD('<h2>Reclamar a ' + esc(prov) + '</h2>'
+    + '<div class="chklist">' + lines.map(r => '<label><input type="checkbox" data-c="clsel" data-k="' + esc(r.key) + '"' + (CL.sel.has(r.key) ? ' checked' : '') + '><span><b class="mono">Pedido ' + esc(r.oc) + '</b> ' + lvlChip(r) + '<br><span class="muted">' + esc([r.cda && 'CDA ' + r.cda, 'previsto ' + fmtD(r.fprev), r.estado].filter(Boolean).join(' · ')) + '</span></span></label>').join('') + '</div>'
+    + '<label class="f">Para<input class="input" id="clTo" value="' + esc(emailOf(prov)) + '" placeholder="email del proveedor"><span class="hint">Si lo rellenas aquí, pulsa «Guardar email» para que quede en el Sheet.</span></label>'
+    + '<label class="f">Mensaje<textarea class="input" id="clBody" rows="12"></textarea></label>'
+    + '<div class="row" style="justify-content:flex-end"><button class="btn" data-a="close">Cerrar</button><button class="btn" data-a="clSaveMail">Guardar email</button><button class="btn" data-a="clCopy">Copiar texto</button><a class="btn" id="clMail" href="#" target="_blank" rel="noopener">Abrir en correo</a><button class="btn btn-pri" data-a="clSent">Marcar como enviada</button></div>');
+  claimText();
+}
+function claimText(){
+  if (!CL) return;
+  const sel = CL.lines.filter(r => CL.sel.has(r.key));
+  const body = 'Buenos días,\n\nOs escribimos por los siguientes pedidos de subcontratación que figuran pendientes de entrega:\n\n'
+    + sel.map(r => '• Pedido ' + r.oc + (r.cda ? ' · CDA ' + r.cda : '') + ' · entrega prevista ' + fmtD(r.fprev)
+      + (r.diff > 0 ? ' (' + r.diff + ' días de retraso)' : r.diff === 0 ? ' (vence hoy)' : ' (vence en ' + (-r.diff) + ' días)')
+      + (r.urg ? ' · URGENTE' : '') + (r.partial ? ' · recepción parcial' : '') + (r.conf ? '' : ' · sin fecha confirmada')).join('\n')
+    + '\n\nOs agradecemos que nos confirméis por escrito una fecha firme de entrega para cada uno, o nos indiquéis cualquier incidencia que lo impida.\n\nUn saludo,\n' + (S.user || '') + '\nRecam';
+  CL.subject = 'Reclamación de entrega · ' + sel.length + (sel.length === 1 ? ' pedido pendiente' : ' pedidos pendientes') + ' · ' + CL.prov;
+  CL.body = body;
+  const ta = $('#clBody'); if (ta) ta.value = body;
+  updMail();
+}
+function updMail(){
+  const a = $('#clMail'); if (!a || !CL) return;
+  CL.body = ($('#clBody') || {}).value || CL.body;
+  a.href = 'mailto:' + encodeURIComponent((($('#clTo') || {}).value || '').replace(/\s/g, '')).replace(/%40/g, '@').replace(/%3B/gi, ';') + '?subject=' + encodeURIComponent(CL.subject) + '&body=' + encodeURIComponent(CL.body);
+}
+
+/* ===== acciones ===== */
+const act = {
+  tab(b){ S.ui.tab = b.dataset.v; window.scrollTo(0, 0); render(); },
+  flt(b){ S.ui.f = b.dataset.v; S.ui.lim = 60; render(); },
+  more(){ S.ui.lim += 60; render(); },
+  moreL(){ S.ui.limL += 150; render(); },
+  est(b){ S.ui.est = b.dataset.v; S.ui.limL = 150; render(); },
+  verProv(b){ S.ui.prov = b.dataset.p; S.ui.comp = ''; S.ui.tab = 'lin'; S.ui.est = 'pend'; S.ui.lvl = ''; S.ui.q = ''; render(); },
+  editProv(b){ openProvEdit(b.dataset.p); },
+  saveProvEdit(){ const p = $('#pvName').value; saveProv(p, $('#pvMail').value.trim(), $('#pvTel').value.trim()); closeD(); toast('Contacto guardado.'); },
+  contact(b){ const k = b.dataset.k; if (!S.user) return askUser(() => openContact(k)); openContact(k); },
+  claim1(b){ const k = b.dataset.k, r = S.byKey.get(k); if (!r) return; const go = () => openClaim(r.prov, [k]); if (!S.user) return askUser(go); go(); },
+  claimProv(b){ const p = b.dataset.p, go = () => openClaim(p, null); if (!S.user) return askUser(go); go(); },
+  close(){ closeD(); },
+  user(){ askUser(null); },
+  saveUser(){ S.user = ($('#uName').value || '').trim(); store.set('rsub_user', S.user); closeD(); const t = askUser.then; askUser.then = null; render(); if (t) t(); },
+  saveContact(){
+    const key = $('#cKey').value, r = S.byKey.get(key); if (!r) return;
+    const nota = $('#cNota').value.trim(), prom = $('#cProm').value;
+    if (!nota && !prom) { toast('Escribe una nota o indica una fecha prometida.'); return; }
+    addSeg([{id:newId(), ts:new Date().toISOString(), key, prov:r.prov, oc:r.oc, linea:'', tipo:$('#cTipo').value, nota, promesa:prom, user:S.user}]);
+    closeD(); toast('Contacto registrado.');
+  },
+  clSaveMail(){ if (!CL) return; const m = $('#clTo').value.trim(); saveProv(CL.prov, m, (S.contacts[CL.prov] || {}).tel || ''); toast('Email guardado para ' + CL.prov + '.'); },
+  clCopy(){ updMail(); const t = 'Asunto: ' + CL.subject + '\n\n' + CL.body; (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(() => toast('Texto copiado.'), () => { const ta = $('#clBody'); ta.focus(); ta.select(); toast('Selecciona y copia el texto (Ctrl+C).'); }); },
+  clSent(){
+    if (!CL) return; const sel = CL.lines.filter(r => CL.sel.has(r.key)); if (!sel.length) { toast('Marca al menos un pedido.'); return; }
+    const ts = new Date().toISOString();
+    addSeg(sel.map(r => ({id:newId(), ts, key:r.key, prov:r.prov, oc:r.oc, linea:'', tipo:'Email', nota:'Reclamación enviada', promesa:'', user:S.user})));
+    closeD(); toast('Reclamación registrada en ' + sel.length + (sel.length === 1 ? ' pedido.' : ' pedidos.'));
+  },
+  refresh(){ pull(false); },
+  saveUrl(){ S.cfg.url = $('#cfgUrl').value.trim(); S.cfg.token = $('#cfgTok').value; saveCfg(); pull(false); },
+  demo(){ setRaw(demoData(), 'demo'); S.seg = []; S.queue = []; S.contacts = {}; S.cqueue = []; ['rsub_seg','rsub_queue','rsub_contacts','rsub_cqueue'].forEach(store.del); S.ui.tab = 'urg'; render(); toast('Datos de ejemplo cargados.'); },
+  clear(){ S.raw = null; S.seg = []; S.queue = []; S.contacts = {}; S.cqueue = []; ['rsub_raw','rsub_seg','rsub_queue','rsub_contacts','rsub_cqueue'].forEach(store.del); build(); render(); toast('Datos borrados de este equipo (el Sheet no se toca).'); }
+};
+document.addEventListener('click', e => { const b = e.target.closest('[data-a]'); if (!b) return; if (b.tagName === 'A' && b.getAttribute('href') === '#') e.preventDefault(); const f = act[b.dataset.a]; if (f) f(b); });
+document.addEventListener('input', e => {
+  const t = e.target;
+  if (t.dataset.i === 'q') { S.ui.q = t.value; S.ui.lim = 60; S.ui.limL = 150; render(); }
+  if (t.id === 'clTo' || t.id === 'clBody') updMail();
+});
+document.addEventListener('change', e => {
+  const t = e.target, c = t.dataset.c;
+  if (c === 'prov') { S.ui.prov = t.value; S.ui.lim = 60; S.ui.limL = 150; render(); }
+  else if (c === 'comp') { S.ui.comp = t.value; S.ui.lim = 60; S.ui.limL = 150; render(); }
+  else if (c === 'lvl') { S.ui.lvl = t.value; render(); }
+  else if (c === 'reclDays' || c === 'soon') { S.cfg[c] = Math.max(0, +t.value || 0); saveCfg(); build(); render(); }
+  else if (c === 'map') { if (t.value) S.cfg.map[t.dataset.f] = t.value; else delete S.cfg.map[t.dataset.f]; saveCfg(); build(); render(); }
+  else if (c === 'clsel') { if (t.checked) CL.sel.add(t.dataset.k); else CL.sel.delete(t.dataset.k); claimText(); }
+  else if (t.id === 'file' && t.files && t.files[0]) importFile(t.files[0]);
+});
+function importFile(file){
+  if (typeof XLSX === 'undefined') { toast('No se ha cargado el lector de Excel (¿sin conexión?).'); return; }
+  const fr = new FileReader();
+  fr.onload = () => {
+    try {
+      const wb = XLSX.read(new Uint8Array(fr.result), {type:'array', cellDates:true});
+      const name = wb.SheetNames.find(n => norm(n) === 'mastersubcontratas') || wb.SheetNames[0];
+      const values = XLSX.utils.sheet_to_json(wb.Sheets[name], {header:1, raw:true, defval:''});
+      setRaw(values, 'file'); S.ui.tab = 'urg'; render();
+      toast(S.rows.length + ' pedidos importados de «' + name + '».');
+    } catch(err) { toast('No se pudo leer el archivo: ' + err.message); }
+  };
+  fr.readAsArrayBuffer(file);
+}
+
+/* ===== datos de ejemplo (ficticios, con la misma estructura del RP) ===== */
+function demoData(){
+  const H = ['', 'Número', 'Tipus', 'Proveïdor', 'Comprador', 'D.Compra', 'Previst', 'D.Recep.', 'Urgent', 'Confirmat', 'A Recam', 'Estat', 'Albarà', 'Cda', 'SU', 'Observacions'];
+  const provs = ['Mecanizados Ejemplo SL', 'Pintura y Acabados Demo', 'Soldaduras Muestra SA', 'Tratamientos Térmicos Ficticio', 'Corte Láser Prueba'];
+  const buyers = ['comprador.uno', 'comprador.dos', 'comprador.tres'];
+  const off = [-40, -23, -16, -14, -12, -9, -8, -7, -5, -4, -3, -2, -1, 0, 1, 2, 3, 5, 8, 12, 20];
+  const d = n => { const x = new Date(); x.setDate(x.getDate() + n); return pad(x.getDate()) + '/' + pad(x.getMonth() + 1) + '/' + x.getFullYear(); };
+  const out = [H]; let seed = 7; const rnd = () => (seed = (seed * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < 60; i++) {
+    const o = off[Math.floor(rnd() * off.length)], recv = rnd() < .3, n = 1 + Math.floor(rnd() * 3);
+    out.push(['', 250100 + i * 37, 'Subcontractació', provs[i % provs.length], buyers[i % 3], d(o - 10) + ' 9:30', d(o), recv ? d(o + 2) + ' 11:05' : '', rnd() < .1, rnd() < .25,
+      rnd() < .4 ? 'Si' : 'No', recv ? 'Comprada' : (rnd() < .5 ? 'Pendent (0/' + n + ')' : 'Comprada'), '', 360000 + i * 11, rnd() < .15 ? 'Instant' : rnd() < .3 ? 'Preferent' : '', rnd() < .3 ? 'Envío de facturas a : compras@ejemplo.test' : '']);
+  }
+  return out;
+}
+
+/* ===== arranque ===== */
+build(); render();
+if (S.cfg.url) { pull(true); }
+setInterval(() => { if (S.cfg.url && document.visibilityState === 'visible' && !S.busy) pull(true); }, 300000);
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') { build(); render(); } });
+})();
+</script>
+</body>
+</html>
