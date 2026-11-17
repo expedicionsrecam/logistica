@@ -229,8 +229,9 @@ function detect(values){
 }
 
 /* ===== estado ===== */
+const DEFAULT_URL = 'https://script.google.com/macros/s/AKfycbyn76NYw8chjQfzkbCzi43IbMVAjmKQZY4VjYEykLwTPc40FhD2tPexkS7SZgd0cgSyWQ/exec';
 const S = {
-  cfg: Object.assign({url:'', token:'', map:{}, reclDays:3, soon:3}, store.get('rsub_cfg', {})),
+  cfg: (c => { if (!c.url) c.url = DEFAULT_URL; return c; })(Object.assign({url:'', token:'', map:{}, reclDays:3, soon:3}, store.get('rsub_cfg', {}))),
   raw: store.get('rsub_raw', null),
   seg: store.get('rsub_seg', []),
   queue: store.get('rsub_queue', []),
