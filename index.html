@@ -635,6 +635,63 @@ dialog{background:var(--sf);color:var(--tx)}
 dialog::backdrop{background:rgba(0,0,0,.65)}
 .hright button{border-color:#4A505C}
 details.card summary{color:var(--tx)}
+/* ============ mapa 3D ============ */
+.m3{position:relative;height:min(640px,66vh);min-height:380px;border-radius:12px;overflow:hidden;background:radial-gradient(ellipse at 50% 35%,#262A35 0%,#15171C 78%);border:1px solid var(--line)}
+.m3 canvas{display:block;width:100%;height:100%;touch-action:pan-y;cursor:grab;outline:none}
+.m3 canvas.drag{cursor:grabbing}
+.m3 canvas:focus-visible{box-shadow:inset 0 0 0 3px var(--yellow)}
+.m3ctl{position:absolute;right:10px;bottom:10px;display:flex;flex-direction:column;gap:6px;z-index:2}
+.m3ctl button{width:46px;height:46px;border-radius:12px;border:1px solid #4A4F5B;background:rgba(21,24,30,.9);color:#fff;font-size:21px;line-height:1;display:flex;align-items:center;justify-content:center;box-shadow:0 2px 8px rgba(0,0,0,.35)}
+.m3ctl button:hover{background:#2A2E38;border-color:var(--yellow)}
+.m3ctl button:active{transform:scale(.94)}
+.m3sel{position:absolute;left:10px;top:10px;max-width:min(520px,calc(100% - 76px));background:rgba(21,24,30,.92);border:1px solid #4A4F5B;border-radius:12px;padding:10px 12px;color:#fff;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;z-index:2;box-shadow:0 4px 14px rgba(0,0,0,.35)}
+.m3sel.m3hint{font-size:13px;color:#C6C8CF;padding:8px 12px;pointer-events:none}
+.m3selh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.m3selh .mono{font-size:17px}
+.m3selb{flex:1 1 100%;font-size:13px;color:#D5D8DE;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.m3sel .btn{margin-left:auto}
+.m3tip{position:absolute;z-index:3;pointer-events:none;background:#0F1115;border:1px solid #4A4F5B;border-radius:8px;padding:8px 10px;color:#EFEFEA;font-size:12px;display:flex;flex-direction:column;gap:2px;max-width:240px;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.m3tip[hidden]{display:none}
+.m3tip b{font-size:14px;color:#fff}
+.m3tip .m3d{margin-top:3px;align-self:flex-start;border-radius:4px;padding:1px 6px;font-weight:600}
+.m3tip .m3d.ag1{background:#FFD43B;color:#15181E}.m3tip .m3d.ag2{background:#F28C28;color:#15181E}.m3tip .m3d.ag3{background:#E03A2F;color:#fff}
+.m3leg{margin-top:12px}
+.m3leg i.ag3{background:#E03A2F!important}
+.m3leg b.mono{color:var(--tx);margin-left:2px}
+.mapmode button{min-width:64px;font-weight:700}
+section.flash{box-shadow:0 0 0 3px var(--yellow);transition:box-shadow .3s}
+@media (max-width:760px){.m3{height:68vh;min-height:380px}.m3ctl{flex-direction:row;left:8px;right:8px;bottom:8px;justify-content:space-between}.m3ctl button{width:auto;flex:1 1 0;height:48px}.m3sel{left:8px;right:8px;top:8px;max-width:none}.m3sel.m3hint{font-size:12px}}
+
+/* ============ barra inferior (móvil) y menú «Más» ============ */
+.bnav{display:none}
+@media (max-width:760px){
+  header nav,header .nav2{display:none!important}
+  .bnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:#15181E;border-top:3px solid var(--yellow);padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));box-shadow:0 -4px 16px rgba(0,0,0,.35)}
+  .bnav button{flex:1 1 0;min-width:0;background:none;border:0;color:#C6C8CF;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:58px;border-radius:10px;font-size:12px;font-weight:600}
+  .bnav button svg{width:26px;height:26px}
+  .bnav button[aria-current="page"]{color:#15181E;background:var(--yellow)}
+  .bnav button[hidden]{display:none}
+  body{padding-bottom:calc(72px + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(84px + env(safe-area-inset-bottom,0px))!important}
+  body.pdafull .bnav{display:none}
+  body.pdafull{padding-bottom:0}
+}
+.moregrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.moreb{display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;min-height:64px;padding:10px 12px;border-radius:10px;border:1px solid var(--line2);background:var(--soft);color:var(--tx)}
+.moreb b{font-size:15px}
+.moreb small{font-size:12px;color:var(--muted)}
+.moreb.on{border-color:var(--yellow);box-shadow:inset 0 0 0 2px var(--yellow)}
+.moreb:active{transform:scale(.98)}
+@media (max-width:360px){.moregrid{grid-template-columns:1fr}}
+
+/* ============ más fácil de tocar ============ */
+@media (pointer:coarse){
+  .btn{min-height:46px}
+  .btn-sm{min-height:40px}
+  .seg button{min-height:44px}
+}
+body.isop .devfoot .devlink{display:none}
+
 </style></head><body><header>
   <div class="hwrap">
     <a class="logo" href="#" data-a="tab" data-tab="ini" aria-label="Recam Laser · almacenes">
@@ -13242,7 +13299,7 @@ const AGE_COL = [['#FFFFFF','#5E626B'], ['#FFD43B','#15181E'], ['#F28C28','#1518
 const ageCol = d => AGE_COL[ageLvl(d)];
 const agCellCls = c => { const d = cellDays(c); return d !== null ? 'ag' + ageLvl(d) : c && c.state === 'libre' ? 'agfree' : 'agnone'; };
 const agChip = d => d === null || d === undefined ? '—' : '<span class="agchip ag' + ageLvl(d) + '" title="' + ageTxt(d) + '">' + d + '</span>';
-const AGEV = () => UI.mv === 'age' && UI.tab === 'mapa';
+const AGEV = () => (UI.mv === 'age' || UI.map3 === '3d') && UI.tab === 'mapa';
 
 /* ================= estructura física e índice ================= */
 const naveById = id => DB.naves.find(n => n.id === id);
@@ -13296,7 +13353,7 @@ function ensureFiveLevels(){
   addLog({type:'Configuración', code:'', note:'Todas las estanterías pasan a 5 alturas (' + n + ' estanterías ampliadas)', user:'Sistema'});
   return true;
 }
-function ensureExpNames(){ const r1 = ensureExpNames0(), r2 = ensureExpCab(), r3 = ensureFiveLevels(); return r1 || r2 || r3; }
+function ensureExpNames(){ const r1 = ensureExpNames0(), r2 = ensureExpCab(), r3 = ensureFiveLevels(), r4 = ensureNoC1(); return r1 || r2 || r3 || r4; }
 function ensureExpNames0(){
   const a = DB.alms.find(x => x.layout === 'exp'); if (!a || (DB.expV || 0) >= 8) return false;
   if (typeof SYNC !== 'undefined' && SYNC.db) { if (!SYNC.on || SYNC.ro || !SYNC.cellsReady || SYNC.role === 'op') return false; }
@@ -13516,7 +13573,7 @@ function vMapa(){
     for (let l = f.levels; l >= 1; l--) {
       elev += '<div class="r" style="' + cols + '"><span class="lab">' + (f.floor ? 'Suelo' : 'N' + l) + '</span>';
       f.codes.filter(k => M(k).level === l).forEach(k => { const c = DB.cells[k], m = M(k);
-        elev += '<button class="cell ' + (AGEV() ? agCellCls(c) : 'st-' + c.state) + (k === UI.cell ? ' sel' : hit.has(k) ? ' hit' : '') + '" data-a="cell" data-code="' + k + '" aria-label="' + k + ' ' + ST[c.state] + (c.of ? ', ' + esc(c.of) : '') + '" title="' + k + (c.of ? ' · ' + esc(c.of + ' · ' + c.client) : '') + '"><b>' + pad(m.mod) + '·' + m.level + '</b><span>' + esc(AGEV() && cellDays(c) !== null ? cellDays(c) + (cellDays(c) === 1 ? ' día' : ' días') : c.of ? c.of.slice(3) + moreTag(c) : ST[c.state]) + '</span></button>'; });
+        elev += '<button class="cell ' + (AGEV() ? agCellCls(c) : 'st-' + c.state) + (k === UI.cell ? ' sel' : hit.has(k) ? ' hit' : '') + '" data-a="cell" data-code="' + k + '" aria-label="' + k + ' ' + ST[c.state] + (c.of ? ', ' + esc(c.of) : '') + '" title="' + k + (c.of ? ' · ' + esc(c.of + ' · ' + c.client) : '') + '"><b>' + pad(m.mod) + '·' + m.level + '</b><span>' + esc(AGEV() && cellDays(c) !== null ? cellDays(c) + (cellDays(c) === 1 ? ' día' : ' días') : c.of ? (ptOf(c.of) || pedOf(c.of)) + moreTag(c) : ST[c.state]) + '</span></button>'; });
       elev += '</div>';
     }
     elevCard = '<div class="row" style="justify-content:space-between;flex-wrap:nowrap"><button class="navbtn" data-a="faceStep" data-d="-1" aria-label="Estantería anterior">' + ICON.left + '</button>'
@@ -13534,11 +13591,11 @@ function vMapa(){
     + '<section class="card" aria-label="Buscar" style="display:flex;flex-direction:column;gap:10px"><label for="mapq" style="font-size:13px;font-weight:600">¿Dónde está? Busca por Pedido, PT, cliente, bulto (U-…) o código de ubicación, en todos los almacenes</label>'
     + '<div class="row"><input id="mapq" class="input" type="search" data-in="mapq" value="' + esc(UI.q) + '" placeholder="Pedido, PT, cliente, U-… o ubicación" style="flex:1 1 320px"><span class="muted" style="font-size:14px">' + rtext + '</span></div>'
     + cchips + (res ? '<div class="row">' + res + '</div>' : '') + '</section>'
-    + '<div class="split"><section class="card a" aria-label="Plano"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>' + (AGEV() ? 'Plano · días que lleva parado el material' : 'Plano · ocupación por cara de estantería') + '</h2><div class="row"><div class="seg" role="group" aria-label="Colorear el plano por"><button type="button" data-a="mapView" data-v="occ" aria-pressed="' + !AGEV() + '">Ocupación</button><button type="button" data-a="mapView" data-v="age" aria-pressed="' + AGEV() + '">Días parado</button></div><span class="muted" style="font-size:13px">Pulsa una estantería para ver su alzado</span>' + (typeof SYNC !== 'undefined' && SYNC.ro ? '' : '<button type="button" class="btn btn-sm" data-a="planEdit">Editar plano</button>') + '</div></div>'
-    + '<div class="planwrap"><div class="plan" style="width:' + g.w + 'px;height:' + g.h + 'px">' + plan + '</div></div>'
+    + '<div class="split"><section class="card a" aria-label="Plano"><div class="row" style="justify-content:space-between;margin-bottom:12px"><h2>' + (is3D() ? 'Almacén en 3D · días que lleva parado el material' : AGEV() ? 'Plano · días que lleva parado el material' : 'Plano · ocupación por cara de estantería') + '</h2><div class="row"><div class="seg mapmode" role="group" aria-label="Tipo de vista"><button type="button" data-a="m3Mode" data-v="3d" aria-pressed="' + is3D() + '">3D</button><button type="button" data-a="m3Mode" data-v="2d" aria-pressed="' + !is3D() + '">2D</button></div>' + (is3D() ? '' : '<div class="seg" role="group" aria-label="Colorear el plano por"><button type="button" data-a="mapView" data-v="occ" aria-pressed="' + !AGEV() + '">Ocupación</button><button type="button" data-a="mapView" data-v="age" aria-pressed="' + AGEV() + '">Días parado</button></div><span class="muted" style="font-size:13px">Pulsa una estantería para ver su alzado</span>') + (typeof SYNC !== 'undefined' && SYNC.ro || isOp() ? '' : '<button type="button" class="btn btn-sm" data-a="planEdit">Editar plano</button>') + '</div></div>'
+    + (is3D() ? m3Html(a, here) + '</section>' : '<div class="planwrap"><div class="plan" style="width:' + g.w + 'px;height:' + g.h + 'px">' + plan + '</div></div>'
     + (AGEV() ? (() => { const n = [0, 0, 0, 0]; codes.forEach(k => { const c = DB.cells[k], d = cellDays(c); if (d !== null) items(c).forEach(x => { n[ageLvl(x.date ? daysSince(x.date) : 0)]++; }); }); return '<div class="agsum">' + [1, 2, 3].map(i => '<span class="ag' + i + '">' + n[i] + (n[i] === 1 ? ' bulto · ' : ' bultos · ') + ['', '0–5 días', '6–10 días', 'más de 10 días'][i] + '</span>').join('') + '</div>'; })() : '')
     + (AGEV() ? '<div class="legend" style="margin-top:14px"><b>Días parado</b><span><i class="ag1"></i>0–5 días</span><span><i class="ag2"></i>6–10 días</span><span><i class="ag3"></i>más de 10 días</span><span><i class="agfree"></i>con huecos libres y sin material</span><span><i style="border:3px solid var(--yellow)"></i>coincide con la búsqueda</span></div><p class="hint" style="margin:6px 0 0">Cada estantería toma el color del bulto que más tiempo lleva en ella.</p></section>' : '')
-    + (AGEV() ? '' : '<div class="legend" style="margin-top:14px"><b>Ocupación</b><span><i class="agfree"></i>toda libre</span><span><i style="background:#F6F1DC;border:1px solid #B5B7BD"></i>hasta 25 %</span><span><i style="background:#EAD88A"></i>25–50 %</span><span><i style="background:#B8961E"></i>50–75 %</span><span><i style="background:#15181E"></i>más de 75 %</span><span><i style="border:3px solid var(--yellow)"></i>coincide con la búsqueda</span></div></section>')
+    + (AGEV() ? '' : '<div class="legend" style="margin-top:14px"><b>Ocupación</b><span><i class="agfree"></i>toda libre</span><span><i style="background:#F6F1DC;border:1px solid #B5B7BD"></i>hasta 25 %</span><span><i style="background:#EAD88A"></i>25–50 %</span><span><i style="background:#B8961E"></i>50–75 %</span><span><i style="background:#15181E"></i>más de 75 %</span><span><i style="border:3px solid var(--yellow)"></i>coincide con la búsqueda</span></div></section>'))
     + '<div class="b"><section class="card" aria-label="Alzado">' + elevCard + '</section>'
     + '<section class="card" aria-label="Detalle de la ubicación">' + detail() + '</section></div></div>';
 }
@@ -13801,8 +13858,8 @@ function vPda(){
     }
   }
   if (P.mode !== 'menu' && !(PDEV.full && !PDEV.op)) foot = '<button class="btn" data-a="pdaGo" data-m="menu">Menú</button>' + foot;
-  return '<div class="titlebar"><div><h1>PDA</h1><p class="sub">Simulador del terminal de los operarios: mismas operaciones, mismos datos que la oficina</p></div></div>'
-    + '<div class="card touchpda" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#FFF7D6;border-color:#E8D27A"><span style="font-size:15px"><b>¿Estás en un móvil o una tablet?</b> Ábrelo como PDA a pantalla completa.</span><button class="btn btn-pri" data-a="pdaSetup">Usar este dispositivo como PDA</button></div>'
+  return '<div class="titlebar"><div><h1>PDA</h1><p class="sub">' + (IS_TOUCH ? 'Escanea para ubicar, recoger, mover o consultar' : 'Simulador del terminal de los operarios: mismas operaciones, mismos datos que la oficina') + '</p></div></div>'
+    + '<div class="card touchpda" style="align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;background:#FFF7D6;border-color:#E8D27A;color:#15181E"><span style="font-size:15px;color:#15181E"><b>¿Estás en un móvil o una tablet?</b> Ábrelo como PDA a pantalla completa.</span><button class="btn btn-pri" data-a="pdaSetup">Usar este dispositivo como PDA</button></div>'
     + '<div class="pdawrap"><div class="pdacol"><div class="pda" role="region" aria-label="Pantalla de la PDA"><div class="scr"><div class="top">' + (P.mode !== 'menu' && !(PDEV.full && !PDEV.op) ? '<button class="back" data-a="pdaBack" aria-label="Atrás">' + ICON.left + '</button>' : '<img src="' + LOGO_I + '" alt="" width="28" height="28" style="margin:0 6px">') + '<div style="min-width:0;flex:1"><div class="t">' + t + '</div><div class="s">' + esc(s) + '</div></div>' + (PDEV.full ? '<div class="pdop"><span>' + esc(PDEV.op) + '</span><small>' + (typeof SYNC !== 'undefined' && SYNC.on ? (SYNC.ro ? 'Solo lectura' : '● En línea') : 'Solo este móvil') + '</small></div><button class="back" data-a="pdaSetup" aria-label="Ajustes de esta PDA">' + GEAR_ICON + '</button>' : '') + '</div>'
     + '<div class="body">' + body + '</div>' + (foot ? '<div class="foot">' + foot + '</div>' : '') + '</div></div></div><div class="pdaside">'
     + '<div class="card pdanotes"><h2>Cómo trabaja el operario</h2><ol style="padding-left:20px;font-size:14px;line-height:1.5;margin:10px 0 0"><li><b>Almacén de trabajo:</b> el operario elige en qué nave y almacén está; las propuestas de hueco son de ese almacén.</li><li><b>Ubicar:</b> escanea la etiqueta de la pieza o escribe pedido y PT, indica la cantidad; la PDA dice a qué hueco ir. Confirma escaneando el QR de la ubicación.</li><li><b>Recoger:</b> escanea una pieza o escribe el nº de pedido (salen todos sus productos); la lista incluye todos los almacenes, en orden de recorrido. Cada QR escaneado marca la línea.</li><li><b>Mover:</b> escanea origen y destino, aunque estén en naves distintas. Queda en el historial.</li><li><b>Consultar / ajustar:</b> escanea una ubicación o el QR de contenido (U-…) de una caja para ver qué hay y corregir la cantidad; o un pedido para ver dónde está.</li></ol><p class="muted" style="font-size:13px;margin:12px 0 0">Los lectores de las PDA escriben el código y pulsan Intro, igual que si lo tecleas aquí. Si escaneas un código sin el prefijo del almacén, se entiende que es del almacén de trabajo.</p></div>' + androidCard() + '</div></div>';
@@ -13936,11 +13993,13 @@ function render(){
   document.body.classList.toggle('pdafull', !!PDEV.full);
   const ae = document.activeElement, fid = ae && ae.id, pos = ae && typeof ae.selectionStart === 'number' ? ae.selectionStart : null;
   const hidTabs = (DB.dev && DB.dev.tabsOcultas) || [];
-  document.querySelectorAll('nav button').forEach(b => { const t = b.getAttribute('data-tab'); t === UI.tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'); const h = hidTabs.includes(t); b.hidden = h && !DEV.ok && t !== UI.tab; b.classList.toggle('devhid', h); });
+  document.querySelectorAll('nav button').forEach(b => { const t = b.getAttribute('data-tab'); t === UI.tab ? b.setAttribute('aria-current','page') : b.removeAttribute('aria-current'); const h = hidTabs.includes(t); b.hidden = (h && !DEV.ok && t !== UI.tab) || (isOp() && OPHIDE.has(t) && t !== UI.tab); b.classList.toggle('devhid', h); });
+  document.body.classList.toggle('isop', isOp());
   { const nv = $('nav'), cur = nv && nv.querySelector('[aria-current="page"]'); if (cur && nv.scrollWidth > nv.clientWidth) { const l = cur.offsetLeft - nv.offsetLeft, r = l + cur.offsetWidth; if (l < nv.scrollLeft + 12) nv.scrollLeft = Math.max(0, l - 24); else if (r > nv.scrollLeft + nv.clientWidth - 12) nv.scrollLeft = r - nv.clientWidth + 24; } }
   const dl = $('.devlink'); if (dl) dl.textContent = DEV.ok ? 'Modo desarrollador (activo)' : 'Modo desarrollador';
   renderCtx(); proHdr();
   $('#app').innerHTML = VIEWS[UI.tab]();
+  m3Mount(); opTidy();
   if (fid && fid !== 'dlg') { const n = document.getElementById(fid); if (n && !dlg.contains(n)) { n.focus(); try { if (pos !== null && n.setSelectionRange) n.setSelectionRange(pos, pos); } catch(e) {} } }
   if (UI.tab === 'pda' && (PDEV.full ? PDEV.lector === 'lector' : !IS_TOUCH)) { const pi = $('#pdain'); if (pi && (!fid || fid === 'pdain')) pi.focus(); }
 }
@@ -15185,14 +15244,14 @@ function vIni(){ const P = PRO(), its = allItems(), t = dayIso(0), boss = isBoss
   /* actividad */
   const cAct = card('Actividad de los últimos 7 días', '<div class="bars">' + Object.keys(byDay).map(d => '<div><div class="bb"><i class="be" style="height:' + Math.round(byDay[d].e / mx * 100) + '%" title="' + byDay[d].e + ' entradas"></i><i class="bs" style="height:' + Math.round(byDay[d].s / mx * 100) + '%" title="' + byDay[d].s + ' salidas"></i></div><span>' + d.slice(8) + '/' + d.slice(5, 7) + '</span><small>' + byDay[d].e + ' · ' + byDay[d].s + '</small></div>').join('') + '</div><div class="legend" style="margin-top:8px"><span><i style="background:var(--navy)"></i>Entradas</span><span><i style="background:var(--yellow)"></i>Salidas</span></div>');
   const empty = !its.length && !DB.erp && !OPS().stage.length;
-  return '<div class="titlebar"><div><h1>Inicio</h1><p class="sub">Lo que hay que mirar hoy: qué sale, qué lleva demasiado parado, qué contar y qué falta</p></div><div class="row">' + (P.demo ? '<button class="btn btn-danger" data-a="proDemoOff">Quitar datos de ejemplo</button>' : empty ? '<button class="btn btn-dark" data-a="proDemo">Cargar datos de ejemplo</button>' : '') + '</div></div>'
+  return '<div class="titlebar"><div><h1>Inicio</h1><p class="sub">Lo que hay que mirar hoy: qué sale, qué lleva demasiado parado, qué contar y qué falta</p></div><div class="row">' + (P.demo ? '<button class="btn btn-danger" data-a="proDemoOff">Quitar datos de ejemplo</button>' : empty && (!SYNC.db || DEV.ok) ? '<button class="btn btn-dark" data-a="proDemo">Cargar datos de ejemplo</button>' : '') + '</div></div>'
     + (P.demo ? '<div class="bulk">Estás viendo <b>datos de ejemplo</b> para probar las funciones. Usuario de prueba: Encargado, PIN 1234 · Operario 1, PIN 1111.</div>' : '')
     + proTiles() + '<div class="progrid">' + cExp + cRed + cBlq + cMin + cInv + cSp + '</div>'
     + '<details class="card inds"><summary><b>Indicadores y actividad</b> <span class="muted">· ocupación, estancia media, entradas y salidas</span></summary><div style="display:flex;flex-direction:column;gap:14px;margin-top:12px">' + kp + cAct + '</div></details>'; }
 A.proAge = () => { UI.mv = 'age'; try { localStorage.setItem('recam-mapview', 'age'); } catch(e) {} setTab('mapa'); };
 
 /* ---------- datos de ejemplo ---------- */
-A.proDemo = () => { const a = DB.alms.find(x => x.layout === 'exp') || DB.alms[0]; if (!a) return toast('Crea antes un almacén'); const P = PRO();
+A.proDemo = () => { if (SYNC.db && !DEV.ok) return toast('Con los datos compartidos no se cargan datos de ejemplo'); const a = DB.alms.find(x => x.layout === 'exp') || DB.alms[0]; if (!a) return toast('Crea antes un almacén'); const P = PRO();
   const free = almCodes(a.id).filter(k => DB.cells[k].state === 'libre' && !FC(M(k).face).floor); let fi = 0; const nextCell = () => free[(fi++ * 37) % free.length];
   const cl = ['STADLER RAIL VALENCIA, SAU.', 'ALSTOM TRANSPORTE', 'STADLER BUSSNANG AG', 'ALTON GRUAS', 'ADELTE PORTS & MARITIME,SLU.'].map(canonCli);
   const desc = ['Soporte lateral', 'Conjunto paso de cable', 'Tapa registro', 'Pletina refuerzo', 'Carcasa inferior', 'Escuadra fijación'];
@@ -15759,6 +15818,295 @@ function androidCard(){
     + '<div class="row" style="margin-top:12px"><button type="button" class="btn btn-pri" data-a="pdaSetup">Usar este dispositivo como PDA</button></div>'
     + '<p class="muted" style="font-size:13px;margin:10px 0 0">Si el móvil abre el archivo HTML descargado en vez del enlace, funciona igual pero con datos solo de ese móvil.</p></div>';
 }
+
+/* ================= MAPA 3D: vista por defecto del plano =================
+   Dibujo propio en canvas (sin librerías): cada ubicación es una caja; las ocupadas
+   toman el color de los días que lleva parado el material. Se gira arrastrando,
+   se acerca con la rueda o pellizcando y se toca una ubicación para verla. */
+UI.map3 = '3d'; /* siempre se abre en 3D; el 2D se elige con el botón y dura hasta recargar */
+const M3 = {yaw:-0.62, tilt:0.58, zoom:1, panX:0, panY:0, cv:null, cx:null, host:null, ro:null, S:null, drawn:[], hov:null, rq:0, ptr:new Map(), g:null, W:0, H:0, dpr:1, almFit:''};
+try { const s = JSON.parse(localStorage.getItem('recam-map3d') || '{}'); if (isFinite(s.yaw)) { M3.yaw = +s.yaw; M3.saved = true; } if (isFinite(s.tilt)) M3.tilt = clamp(+s.tilt, .34, 1); } catch(e) {}
+const m3Save = () => { try { localStorage.setItem('recam-map3d', JSON.stringify({yaw:M3.yaw, tilt:M3.tilt})); } catch(e) {} };
+const is3D = () => UI.map3 !== '2d';
+const M3_LH = 9; /* altura de un nivel, en unidades del plano */
+const M3_AGE = ['#9AA1AE', '#FFD43B', '#F28C28', '#E03A2F'];
+const M3_AGE_TXT = ['', '0–5 días', '6–10 días', 'más de 10 días'];
+
+/* color de una ubicación: null = libre */
+function m3Col(c){
+  if (!c || c.state === 'libre') return null;
+  if (c.state === 'bloqueada') return {f:'#4B4F59', blk:true};
+  if (c.state === 'reservada') return {f:'#5B8DEF', res:true};
+  const d = cellDays(c); return {f:M3_AGE[ageLvl(d === null ? 0 : d)], part:c.state === 'parcial', d};
+}
+function m3Zones(a){ try { return (a.plan && a.plan.zones) ? a.plan.zones : planFromLayout(a).zones; } catch(e) { return []; } }
+
+/* ---------- escena: cajas, zonas y rótulos del almacén ---------- */
+function m3Scene(a, hits){
+  const g = IDX.geo[a.id], items3 = [], labels = [], zones = [];
+  const P = (k, x0, y0, x1, y1, z0, z1, kind, extra) => items3.push(Object.assign({k, x0, y0, x1, y1, z0, z1, kind}, extra || {}));
+  m3Zones(a).forEach(z => {
+    if (z.t === 'suelo') { zones.push({x0:z.x, y0:z.y, x1:z.x + z.w, y1:z.y + z.h, t:'suelo', txt:''}); return; }
+    const txt = z.txt || (ZT[z.t] ? ZT[z.t].n : '');
+    if (z.t === 'pared') P(null, z.x, z.y, z.x + z.w, z.y + z.h, 0, 26, 'pared');
+    else if (z.t === 'oficina') { P(null, z.x, z.y, z.x + z.w, z.y + z.h, 0, 16, 'ofi'); zones.push({x0:z.x, y0:z.y, x1:z.x + z.w, y1:z.y + z.h, t:'lbl', txt, z:17}); }
+    else if (z.t === 'mesa') zones.push({x0:z.x, y0:z.y, x1:z.x + z.w, y1:z.y + z.h, t:'mesa', txt});
+    else zones.push({x0:z.x, y0:z.y, x1:z.x + z.w, y1:z.y + z.h, t:z.t, txt});
+  });
+  g.faces.forEach(f => {
+    if (f.floor) {
+      const fz = g.floorZone;
+      f.codes.forEach((k, i) => { const c = DB.cells[k]; let x0, y0, x1, y1;
+        if (fz) { const n = f.codes.length, vert = fz.h >= fz.w;
+          if (vert) { const s = fz.h / n; x0 = fz.x + 3; x1 = fz.x + fz.w - 3; y0 = fz.y + i*s + 2; y1 = fz.y + (i + 1)*s - 2; }
+          else { const s = fz.w / n; y0 = fz.y + 3; y1 = fz.y + fz.h - 3; x0 = fz.x + i*s + 2; x1 = fz.x + (i + 1)*s - 2; } }
+        else { const p = g.floorXY[i]; x0 = p.x; y0 = p.y; x1 = p.x + 28; y1 = p.y + 28; }
+        P(k, x0, y0, x1, y1, 0, M3_LH * 1.4, 'pal', {c, face:f.key, hit:hits.has(k)}); });
+      if (!fz && g.floorXY.length) labels.push({t:'Suelo', x:g.floorXY[0].x + 14, y:g.floorXY[0].y - 6, z:2, face:f.key});
+      else if (fz) labels.push({t:'Suelo', x:fz.x + fz.w/2, y:fz.y + fz.h/2, z:M3_LH * 1.6, face:f.key});
+      return;
+    }
+    const n = f.mods;
+    f.codes.forEach(k => { const m = M(k), c = DB.cells[k]; let x0, y0, x1, y1;
+      if (f.v) { const s = f.ph / n; x0 = f.px; x1 = f.px + f.pw; y0 = f.py + (m.mod - 1)*s; y1 = y0 + s; }
+      else { const s = f.pw / n; y0 = f.py; y1 = f.py + f.ph; x0 = f.px + (m.mod - 1)*s; x1 = x0 + s; }
+      const z0 = (m.level - 1) * M3_LH;
+      P(k, x0 + .6, y0 + .6, x1 - .6, y1 - .6, z0, z0 + M3_LH, 'cel', {c, face:f.key, hit:hits.has(k)}); });
+    labels.push({t:f.id, x:f.px + f.pw/2, y:f.py + f.ph/2, z:f.levels * M3_LH + 3, face:f.key});
+  });
+  let zt = M3_LH * 2; items3.forEach(b => { if (b.z1 > zt) zt = b.z1; });
+  return {w:g.w, h:g.h, cx:g.w/2, cy:g.h/2, items:items3, labels, zones, zTop:zt, dock:g.dock, alm:a.id};
+}
+
+/* ---------- proyección ---------- */
+function m3Cam(){ const S = M3.S, c = Math.cos(M3.yaw), s = Math.sin(M3.yaw), t = M3.tilt, zf = Math.sqrt(Math.max(0, 1 - t*t));
+  const pr = (x, y, z) => { const dx = x - S.cx, dy = y - S.cy, rx = dx*c - dy*s, ry = dx*s + dy*c; return [rx, ry*t - z*zf, ry]; };
+  let u0 = 1e9, u1 = -1e9, v0 = 1e9, v1 = -1e9;
+  [[0, 0], [S.w, 0], [S.w, S.h], [0, S.h]].forEach(([x, y]) => [0, S.zTop].forEach(z => { const p = pr(x, y, z); u0 = Math.min(u0, p[0]); u1 = Math.max(u1, p[0]); v0 = Math.min(v0, p[1]); v1 = Math.max(v1, p[1]); }));
+  const pad = M3.W < 520 ? 14 : 28, k = Math.min((M3.W - pad*2) / Math.max(1, u1 - u0), (M3.H - pad*2) / Math.max(1, v1 - v0)) * M3.zoom;
+  const uc = (u0 + u1)/2, vc = (v0 + v1)/2, ox = M3.W/2 + M3.panX, oy = M3.H/2 + M3.panY;
+  return {c, s, k, P:(x, y, z) => { const p = pr(x, y, z); return [ox + (p[0] - uc)*k, oy + (p[1] - vc)*k, p[2]]; }};
+}
+const m3Shade = (hex, f) => { const n = parseInt(hex.slice(1), 16); let r = n >> 16, g = (n >> 8) & 255, b = n & 255;
+  if (f >= 1) { r += (255 - r)*(f - 1); g += (255 - g)*(f - 1); b += (255 - b)*(f - 1); } else { r *= f; g *= f; b *= f; }
+  return 'rgb(' + Math.round(r) + ',' + Math.round(g) + ',' + Math.round(b) + ')'; };
+function m3Poly(cx, pts){ cx.beginPath(); cx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < pts.length; i++) cx.lineTo(pts[i][0], pts[i][1]); cx.closePath(); }
+
+/* caja: devuelve los 8 vértices proyectados y pinta caras visibles */
+function m3Box(cx, C, b, z0, z1, style){
+  const bt = [[b.x0, b.y0], [b.x1, b.y0], [b.x1, b.y1], [b.x0, b.y1]], lo = bt.map(p => C.P(p[0], p[1], z0)), hi = bt.map(p => C.P(p[0], p[1], z1));
+  const nrm = [[0, -1], [1, 0], [0, 1], [-1, 0]];
+  if (z1 - z0 > .01) for (let i = 0; i < 4; i++) { const j = (i + 1) % 4, ny = nrm[i][0]*C.s + nrm[i][1]*C.c; if (ny <= 0.0001) continue;
+    const quad = [lo[i], lo[j], hi[j], hi[i]], nx = nrm[i][0]*C.c - nrm[i][1]*C.s, lit = .62 + .2*nx;
+    m3Poly(cx, quad); if (style.fill) { cx.fillStyle = typeof style.fill === 'string' ? m3Shade(style.fill, lit) : style.fill(lit); cx.fill(); } if (style.line) { cx.strokeStyle = style.line; cx.lineWidth = style.lw || 1; cx.stroke(); } }
+  m3Poly(cx, hi); if (style.top || style.fill) { cx.fillStyle = style.top || (typeof style.fill === 'string' ? m3Shade(style.fill, 1.08) : style.fill(1.08)); cx.fill(); }
+  if (style.line) { cx.strokeStyle = style.line; cx.lineWidth = style.lw || 1; cx.stroke(); }
+  return lo.concat(hi);
+}
+function m3Flat(cx, C, z, x0, y0, x1, y1){ const q = [C.P(x0, y0, z), C.P(x1, y0, z), C.P(x1, y1, z), C.P(x0, y1, z)]; m3Poly(cx, q); return q; }
+
+/* ---------- dibujo ---------- */
+function m3Draw(){
+  M3.rq = 0; const cv = M3.cv, S = M3.S; if (!cv || !S || !M3.W) return;
+  const cx = M3.cx, dpr = M3.dpr; cx.setTransform(dpr, 0, 0, dpr, 0, 0); cx.clearRect(0, 0, M3.W, M3.H);
+  const C = m3Cam(); M3.C = C;
+  /* suelo con cuadrícula de 2 m */
+  m3Flat(cx, C, 0, 0, 0, S.w, S.h); cx.fillStyle = '#1C1F26'; cx.fill(); cx.strokeStyle = '#3A3F4A'; cx.lineWidth = 1.5; cx.stroke();
+  cx.strokeStyle = 'rgba(255,255,255,.045)'; cx.lineWidth = 1; cx.beginPath();
+  for (let x = 25; x < S.w; x += 25) { const a = C.P(x, 0, 0), b = C.P(x, S.h, 0); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); }
+  for (let y = 25; y < S.h; y += 25) { const a = C.P(0, y, 0), b = C.P(S.w, y, 0); cx.moveTo(a[0], a[1]); cx.lineTo(b[0], b[1]); } cx.stroke();
+  /* zonas planas */
+  const zl = [];
+  S.zones.forEach(z => { if (z.t === 'lbl') { zl.push(z); return; } const q = m3Flat(cx, C, .2, z.x0, z.y0, z.x1, z.y1);
+    if (z.t === 'pasillo') { cx.fillStyle = 'rgba(242,194,0,.10)'; cx.fill(); cx.setLineDash([5, 4]); cx.strokeStyle = 'rgba(242,194,0,.45)'; cx.stroke(); cx.setLineDash([]); }
+    else if (z.t === 'muelle') { cx.fillStyle = 'rgba(242,194,0,.30)'; cx.fill(); cx.strokeStyle = '#F2C200'; cx.lineWidth = 2; cx.stroke(); cx.lineWidth = 1; }
+    else if (z.t === 'suelo') { cx.fillStyle = 'rgba(255,255,255,.04)'; cx.fill(); cx.setLineDash([4, 4]); cx.strokeStyle = 'rgba(255,255,255,.35)'; cx.stroke(); cx.setLineDash([]); }
+    else if (z.t === 'mesa') { cx.fillStyle = 'rgba(255,255,255,.07)'; cx.fill(); cx.setLineDash([3, 3]); cx.strokeStyle = 'rgba(255,255,255,.28)'; cx.stroke(); cx.setLineDash([]); }
+    else { cx.fillStyle = 'rgba(255,255,255,.05)'; cx.fill(); cx.strokeStyle = 'rgba(255,255,255,.2)'; cx.stroke(); }
+    if (z.txt) zl.push(Object.assign({q}, z)); });
+  /* textos de zonas, en el suelo */
+  cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  zl.forEach(z => { const q = z.q || m3Flat(cx, C, z.z || 0, z.x0, z.y0, z.x1, z.y1), xs = q.map(p => p[0]), ys = q.map(p => p[1]), bw = Math.max(...xs) - Math.min(...xs), bh = Math.max(...ys) - Math.min(...ys);
+    const fs = clamp(Math.round(11 * Math.sqrt(C.k)), 10, 14); cx.font = '600 ' + fs + 'px "IBM Plex Sans",system-ui,sans-serif';
+    const full = z.t === 'muelle' ? z.txt.toUpperCase() : z.txt, avail = Math.max(bw, bh * .9) - 10; let t = full;
+    if (cx.measureText(t).width > avail) { const ws = full.split(/\s*·\s*|\s+/); t = ''; for (const w of ws) { const n = t ? t + ' ' + w : w; if (cx.measureText(n + '…').width > avail) break; t = n; } if (!t) return; if (t !== full) t += '…'; }
+    const p = C.P((z.x0 + z.x1)/2, (z.y0 + z.y1)/2, z.z || .3); cx.fillStyle = z.t === 'muelle' ? '#F2C200' : 'rgba(255,255,255,.42)'; cx.fillText(t, p[0], p[1]); });
+  /* cajas ordenadas de atrás adelante */
+  const q = (UI.q || '').trim().length >= 2 || UI.qc || UI.qk, sel = UI.cell, selF = UI.face;
+  const list = S.items.map(b => { const mx = (b.x0 + b.x1)/2 - S.cx, my = (b.y0 + b.y1)/2 - S.cy; return {b, d:mx*C.s + my*C.c, z:b.z0}; });
+  list.sort((a, b) => a.d - b.d || a.z - b.z);
+  const drawn = [];
+  list.forEach(({b}) => {
+    if (b.kind === 'pared') { drawn.push({b, pts:m3Box(cx, C, b, b.z0, b.z1, {fill:'#666B78', line:'rgba(0,0,0,.35)'})}); return; }
+    if (b.kind === 'ofi') { drawn.push({b, pts:m3Box(cx, C, b, b.z0, b.z1, {fill:'#3B404B', line:'rgba(255,255,255,.18)'})}); return; }
+    const col = m3Col(b.c), dim = q && !b.hit;
+    cx.globalAlpha = dim ? .28 : 1;
+    let pts;
+    if (b.kind === 'pal') { /* palé en el suelo */
+      const base = m3Box(cx, C, b, 0, 2.2, {fill:'#8A6A3E', line:'rgba(0,0,0,.35)'});
+      if (col) { const ib = {x0:b.x0 + 1.5, y0:b.y0 + 1.5, x1:b.x1 - 1.5, y1:b.y1 - 1.5}; pts = m3Box(cx, C, ib, 2.2, col.part ? 7 : b.z1, {fill:col.f, line:'rgba(0,0,0,.35)'}); pts = base.concat(pts); }
+      else pts = base;
+    } else {
+      /* balda */
+      const sh = m3Box(cx, C, {x0:b.x0 - .5, y0:b.y0 - .5, x1:b.x1 + .5, y1:b.y1 + .5}, b.z0, b.z0 + .9, {fill:'#4A505C'});
+      const h = b.z1 - b.z0 - 1.4;
+      if (col) { const ib = {x0:b.x0 + .9, y0:b.y0 + .9, x1:b.x1 - .9, y1:b.y1 - .9}, top = b.z0 + .9 + (col.part ? h * .5 : h);
+        pts = m3Box(cx, C, ib, b.z0 + .9, top, {fill:col.f, line:col.blk ? 'rgba(255,255,255,.35)' : 'rgba(0,0,0,.38)'});
+        if (col.blk) { const t2 = [C.P(ib.x0, ib.y0, top), C.P(ib.x1, ib.y1, top)], t3 = [C.P(ib.x1, ib.y0, top), C.P(ib.x0, ib.y1, top)];
+          cx.strokeStyle = '#E8E8E8'; cx.lineWidth = 1.4; cx.beginPath(); cx.moveTo(t2[0][0], t2[0][1]); cx.lineTo(t2[1][0], t2[1][1]); cx.moveTo(t3[0][0], t3[0][1]); cx.lineTo(t3[1][0], t3[1][1]); cx.stroke(); }
+        pts = sh.concat(pts); }
+      else { pts = m3Box(cx, C, b, b.z0 + .9, b.z1, {fill:lit => 'rgba(190,198,212,' + (.025 * lit).toFixed(3) + ')', top:'rgba(190,198,212,.02)', line:'rgba(190,198,212,.10)'}); pts = sh.concat(pts); }
+    }
+    cx.globalAlpha = 1;
+    drawn.push({b, pts});
+  });
+  M3.drawn = drawn;
+  /* contornos encima: coincidencias, cara elegida, ubicación elegida y la del ratón */
+  const ring = (d, color, w) => { const h = m3Hull(d.pts); m3Poly(cx, h); cx.strokeStyle = color; cx.lineWidth = w; cx.stroke(); };
+  drawn.forEach(d => { if (d.b.hit) ring(d, '#F2C200', 2); });
+  drawn.forEach(d => { if (d.b.k && d.b.k === M3.hov && d.b.k !== sel) ring(d, 'rgba(255,255,255,.9)', 1.6); });
+  drawn.forEach(d => { if (d.b.k && d.b.k === sel) { ring(d, '#15181E', 6); ring(d, '#F2C200', 3); } });
+  /* rótulos de las caras */
+  const lab = S.labels.map(l => ({l, p:C.P(l.x, l.y, l.z)})).sort((a, b) => a.p[2] - b.p[2]);
+  const fs = clamp(Math.round(10.5 * Math.sqrt(C.k)), 10, 15); cx.font = '700 ' + fs + 'px "IBM Plex Sans",system-ui,sans-serif';
+  const placed = [], ov = (x, y, w, h) => placed.some(r => x < r[0] + r[2] + 2 && x + w + 2 > r[0] && y < r[1] + r[3] + 2 && y + h + 2 > r[1]);
+  lab.sort((a, b) => (b.l.face === selF) - (a.l.face === selF));
+  lab.forEach(({l, p}) => { const on = l.face === selF, w = cx.measureText(l.t).width + 10, h = fs + 6;
+    if (ov(p[0] - w/2, p[1] - h/2, w, h)) return; placed.push([p[0] - w/2, p[1] - h/2, w, h]);
+    cx.globalAlpha = q && !S.items.some(b => b.face === l.face && b.hit) ? .45 : 1;
+    cx.fillStyle = on ? '#F2C200' : 'rgba(21,24,30,.86)'; m3RR(cx, p[0] - w/2, p[1] - h/2, w, h, 5); cx.fill();
+    cx.strokeStyle = on ? '#15181E' : 'rgba(255,255,255,.22)'; cx.lineWidth = 1; cx.stroke();
+    cx.fillStyle = on ? '#15181E' : '#FFFFFF'; cx.fillText(l.t, p[0], p[1] + .5); cx.globalAlpha = 1; });
+}
+function m3RR(cx, x, y, w, h, r){ cx.beginPath(); cx.moveTo(x + r, y); cx.arcTo(x + w, y, x + w, y + h, r); cx.arcTo(x + w, y + h, x, y + h, r); cx.arcTo(x, y + h, x, y, r); cx.arcTo(x, y, x + w, y, r); cx.closePath(); }
+function m3Hull(pts){ const p = pts.map(x => [x[0], x[1]]).sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (p.length < 3) return p;
+  const cr = (o, a, b) => (a[0] - o[0])*(b[1] - o[1]) - (a[1] - o[1])*(b[0] - o[0]), lo = [], hi = [];
+  p.forEach(q => { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], q) <= 0) lo.pop(); lo.push(q); });
+  for (let i = p.length - 1; i >= 0; i--) { const q = p[i]; while (hi.length >= 2 && cr(hi[hi.length - 2], hi[hi.length - 1], q) <= 0) hi.pop(); hi.push(q); }
+  return lo.slice(0, -1).concat(hi.slice(0, -1)); }
+function m3In(h, x, y){ let inside = false; for (let i = 0, j = h.length - 1; i < h.length; j = i++) { const xi = h[i][0], yi = h[i][1], xj = h[j][0], yj = h[j][1];
+  if ((yi > y) !== (yj > y) && x < (xj - xi)*(y - yi)/(yj - yi) + xi) inside = !inside; } return inside; }
+function m3Pick(x, y){ for (let i = M3.drawn.length - 1; i >= 0; i--) { const d = M3.drawn[i]; if (!d.b.k) continue; if (m3In(m3Hull(d.pts), x, y)) return d.b.k; } return null; }
+const m3Req = () => { if (!M3.rq) M3.rq = requestAnimationFrame(m3Draw); };
+
+/* ---------- interacción ---------- */
+function m3Pt(ev){ const r = M3.cv.getBoundingClientRect(); return [ev.clientX - r.left, ev.clientY - r.top]; }
+function m3Tip(k, x, y){ const t = M3.host && M3.host.querySelector('.m3tip'); if (!t) return;
+  if (!k || IS_TOUCH) { t.hidden = true; return; }
+  const c = DB.cells[k], its = items(c), d = cellDays(c);
+  t.innerHTML = '<b class="mono">' + esc(k) + '</b><span>' + esc(posText(k)) + '</span>' + (its.length ? its.slice(0, 3).map(i => '<span>' + esc(pzTxt(i.of)) + ' · ' + (+i.qty || 0) + ' uds' + (i.client ? ' · ' + esc(i.client) : '') + '</span>').join('') + (its.length > 3 ? '<span>+' + (its.length - 3) + ' bultos más</span>' : '') : '<span>' + ST[c.state] + (c.reason ? ' · ' + esc(c.reason) : '') + '</span>') + (d !== null ? '<span class="m3d ag' + ageLvl(d) + '">' + d + (d === 1 ? ' día' : ' días') + ' parado</span>' : '');
+  t.hidden = false; const W = M3.W; t.style.left = Math.min(W - 250, x + 14) + 'px'; t.style.top = Math.max(6, y - 10) + 'px'; }
+function m3Listen(cv){
+  cv.addEventListener('pointerdown', ev => { cv.setPointerCapture(ev.pointerId); const p = m3Pt(ev); M3.ptr.set(ev.pointerId, p);
+    if (M3.ptr.size === 1) M3.g = {x:p[0], y:p[1], t:Date.now(), moved:0, pan:ev.button === 2 || ev.shiftKey || ev.ctrlKey || ev.metaKey, yaw:M3.yaw, tilt:M3.tilt, px:M3.panX, py:M3.panY};
+    else if (M3.ptr.size === 2) { const [a, b] = [...M3.ptr.values()]; M3.g = {pinch:Math.hypot(a[0] - b[0], a[1] - b[1]), zoom:M3.zoom, mx:(a[0] + b[0])/2, my:(a[1] + b[1])/2, px:M3.panX, py:M3.panY, yaw:M3.yaw, ang:Math.atan2(b[1] - a[1], b[0] - a[0]), moved:99}; }
+    cv.classList.add('drag'); });
+  cv.addEventListener('pointermove', ev => { const p = m3Pt(ev);
+    if (!M3.ptr.has(ev.pointerId)) { if (ev.pointerType === 'mouse') { const k = m3Pick(p[0], p[1]); if (k !== M3.hov) { M3.hov = k; m3Req(); } m3Tip(k, p[0], p[1]); cv.style.cursor = k ? 'pointer' : 'grab'; } return; }
+    M3.ptr.set(ev.pointerId, p); const G = M3.g; if (!G) return;
+    if (M3.ptr.size >= 2 && G.pinch) { const [a, b] = [...M3.ptr.values()], dd = Math.hypot(a[0] - b[0], a[1] - b[1]);
+      M3.zoom = clamp(G.zoom * dd / G.pinch, .6, 6); M3.panX = G.px + (a[0] + b[0])/2 - G.mx; M3.panY = G.py + (a[1] + b[1])/2 - G.my;
+      M3.yaw = G.yaw + (Math.atan2(b[1] - a[1], b[0] - a[0]) - G.ang); m3Req(); return; }
+    const dx = p[0] - G.x, dy = p[1] - G.y; G.moved = Math.max(G.moved, Math.abs(dx) + Math.abs(dy));
+    if (G.moved < 5) return;
+    if (G.pan) { M3.panX = G.px + dx; M3.panY = G.py + dy; }
+    else { M3.yaw = G.yaw + dx * .008; if (ev.pointerType === 'mouse') M3.tilt = clamp(G.tilt - dy * .004, .34, 1); }
+    m3Tip(null); m3Req(); });
+  const end = ev => { const G = M3.g, p = m3Pt(ev); M3.ptr.delete(ev.pointerId); cv.classList.remove('drag');
+    if (M3.ptr.size === 0) { if (G && G.moved < 5 && ev.type === 'pointerup') { const k = m3Pick(p[0], p[1]); if (k) m3Select(k); } else m3Save(); M3.g = null; }
+    else if (M3.ptr.size === 1) { const q = [...M3.ptr.values()][0]; M3.g = {x:q[0], y:q[1], t:Date.now(), moved:99, pan:true, yaw:M3.yaw, tilt:M3.tilt, px:M3.panX, py:M3.panY}; } };
+  cv.addEventListener('pointerup', end); cv.addEventListener('pointercancel', end);
+  cv.addEventListener('pointerleave', () => { if (M3.hov) { M3.hov = null; m3Req(); } m3Tip(null); });
+  cv.addEventListener('contextmenu', ev => ev.preventDefault());
+  cv.addEventListener('wheel', ev => { ev.preventDefault(); const f = Math.exp(-ev.deltaY * .0016), z = clamp(M3.zoom * f, .6, 6), p = m3Pt(ev), r = z / M3.zoom;
+    M3.panX = (M3.panX + M3.W/2 - p[0]) * r + p[0] - M3.W/2; M3.panY = (M3.panY + M3.H/2 - p[1]) * r + p[1] - M3.H/2; M3.zoom = z; m3Req(); }, {passive:false});
+  cv.addEventListener('keydown', ev => { const k = ev.key; if (k === 'ArrowLeft') M3.yaw -= .2; else if (k === 'ArrowRight') M3.yaw += .2; else if (k === 'ArrowUp') M3.tilt = clamp(M3.tilt - .06, .34, 1); else if (k === 'ArrowDown') M3.tilt = clamp(M3.tilt + .06, .34, 1); else if (k === '+') M3.zoom = clamp(M3.zoom * 1.2, .6, 6); else if (k === '-') M3.zoom = clamp(M3.zoom / 1.2, .6, 6); else return; ev.preventDefault(); m3Save(); m3Req(); });
+}
+function m3Select(k){ if (!M(k)) return; UI.face = M(k).face; UI.cell = k; render(); }
+
+/* ---------- montaje: el canvas se conserva entre renders ---------- */
+function m3Mount(){
+  const host = document.getElementById('m3host'); if (!host) { if (M3.ro) { M3.ro.disconnect(); M3.ro = null; } return; }
+  const a = curAlm(); if (!a) return;
+  if (!M3.cv) { M3.cv = document.createElement('canvas'); M3.cv.tabIndex = 0; M3.cv.setAttribute('role', 'img'); M3.cx = M3.cv.getContext('2d'); m3Listen(M3.cv); }
+  M3.cv.setAttribute('aria-label', 'Vista 3D de ' + a.nombre + '. Arrastra para girar; usa el alzado y la búsqueda para elegir ubicaciones.');
+  host.insertBefore(M3.cv, host.firstChild); M3.host = host;
+  if (M3.almFit !== a.id) { M3.almFit = a.id; M3.zoom = 1; M3.panX = 0; M3.panY = 0; }
+  const hits = new Set(UI._m3hits || []); M3.S = m3Scene(a, hits);
+  const size = () => { const r = host.getBoundingClientRect(), dpr = Math.min(2, window.devicePixelRatio || 1); if (!r.width) return;
+    if (!M3.saved && !M3.sized) { M3.sized = true; if (r.height > r.width * 1.1) M3.yaw = 1.32; } /* móvil en vertical: el almacén a lo largo */
+    M3.W = r.width; M3.H = r.height; M3.dpr = dpr; M3.cv.width = Math.round(r.width * dpr); M3.cv.height = Math.round(r.height * dpr); m3Draw(); };
+  if (M3.ro) M3.ro.disconnect(); if (typeof ResizeObserver !== 'undefined') { M3.ro = new ResizeObserver(size); M3.ro.observe(host); }
+  size();
+}
+
+/* ---------- HTML de la tarjeta 3D (lo llama el mapa) ---------- */
+function m3Html(a, here){
+  UI._m3hits = here; const codes = almCodes(a.id), n = [0, 0, 0, 0]; let res = 0, blk = 0, free = 0;
+  codes.forEach(k => { const c = DB.cells[k]; if (c.state === 'libre') free++; else if (c.state === 'reservada') res++; else if (c.state === 'bloqueada') blk++; else { const d = cellDays(c); n[ageLvl(d === null ? 0 : d)]++; } });
+  n[1] += n[0]; const k = UI.cell && M(UI.cell) && M(UI.cell).alm === a.id ? UI.cell : null;
+  let sel = '<div class="m3sel m3hint">' + (IS_TOUCH ? 'Toca una caja para ver qué tiene · desliza de lado para girar' : 'Pulsa una ubicación para ver qué tiene · arrastra para girar · rueda para acercar · Mayús + arrastrar para mover') + '</div>';
+  if (k) { const c = DB.cells[k], its = items(c), d = cellDays(c);
+    sel = '<div class="m3sel"><div class="m3selh"><b class="mono">' + esc(k) + '</b>' + chip(c.state) + (d !== null ? '<span class="agchip ag' + ageLvl(d) + '">' + d + (d === 1 ? ' día' : ' días') + '</span>' : '') + '</div>'
+      + '<div class="m3selb">' + (its.length ? esc(its.map(i => pzTxt(i.of) + ' · ' + (+i.qty || 0) + ' uds').slice(0, 2).join(' | ') + (its.length > 2 ? ' · +' + (its.length - 2) : '')) + (its[0] && its[0].client ? ' · ' + esc(its[0].client) : '') : esc(posText(k))) + '</div>'
+      + '<button type="button" class="btn btn-sm btn-pri" data-a="m3Detail">Ver y operar</button></div>'; }
+  const L = (cls, sty, t, v) => '<span><i class="' + cls + '"' + (sty ? ' style="' + sty + '"' : '') + '></i>' + t + ' <b class="mono">' + v + '</b></span>';
+  return '<div class="m3" id="m3host">' + sel
+    + '<div class="m3ctl" role="group" aria-label="Controles de la vista 3D"><button type="button" data-a="m3Zoom" data-d="1" aria-label="Acercar">+</button><button type="button" data-a="m3Zoom" data-d="-1" aria-label="Alejar">−</button><button type="button" data-a="m3Rot" data-d="-1" aria-label="Girar a la izquierda">⟲</button><button type="button" data-a="m3Rot" data-d="1" aria-label="Girar a la derecha">⟳</button><button type="button" data-a="m3Tilt" aria-label="Ver desde arriba o inclinado" title="Desde arriba / inclinado">' + (M3.tilt > .9 ? '◩' : '⬒') + '</button><button type="button" data-a="m3Fit" aria-label="Centrar la vista" title="Centrar">⌖</button></div>'
+    + '<div class="m3tip" hidden></div></div>'
+    + '<div class="legend m3leg"><b>Días parado</b>' + L('ag1', '', M3_AGE_TXT[1], n[1]) + L('ag2', '', M3_AGE_TXT[2], n[2]) + L('ag3', '', M3_AGE_TXT[3], n[3]) + L('', 'background:#5B8DEF', 'reservada', res) + L('', 'background:#4B4F59;border:1px solid #9AA1AE', 'bloqueada', blk) + L('', 'background:transparent;border:1px dashed #9AA1AE', 'libre', free) + '</div>'
+    + '<p class="hint" style="margin:6px 0 0">Cada caja es una ubicación. Las cajas a media altura están parcialmente ocupadas. Las que coinciden con la búsqueda se marcan en amarillo y el resto se atenúa.</p>';
+}
+A.m3Mode = d => { UI.map3 = d.v === '2d' ? '2d' : '3d'; render(); };
+A.m3Zoom = d => { M3.zoom = clamp(M3.zoom * (+d.d > 0 ? 1.3 : 1/1.3), .6, 6); m3Req(); };
+A.m3Rot = d => { const to = M3.yaw + (+d.d) * Math.PI / 4, from = M3.yaw, t0 = performance.now();
+  const step = t => { const f = Math.min(1, (t - t0) / 260), e = 1 - Math.pow(1 - f, 3); M3.yaw = from + (to - from) * e; m3Draw(); if (f < 1) requestAnimationFrame(step); else m3Save(); }; requestAnimationFrame(step); };
+A.m3Tilt = () => { const from = M3.tilt, to = from > .9 ? .58 : 1, t0 = performance.now(), y0 = M3.yaw, q = Math.PI / 2, y1 = to === 1 ? Math.round(y0 / q) * q : y0 - .62;
+  const step = t => { const f = Math.min(1, (t - t0) / 280), e = 1 - Math.pow(1 - f, 3); M3.tilt = from + (to - from) * e; M3.yaw = y0 + (y1 - y0) * e; m3Draw(); if (f < 1) requestAnimationFrame(step); else { m3Save(); const b = document.querySelector('[data-a=m3Tilt]'); if (b) b.textContent = M3.tilt > .9 ? '◩' : '⬒'; } }; requestAnimationFrame(step); };
+A.m3Fit = () => { M3.zoom = 1; M3.panX = 0; M3.panY = 0; m3Req(); };
+A.m3Detail = () => { const el = document.querySelector('section[aria-label="Detalle de la ubicación"]'); if (el) { el.scrollIntoView({behavior:'smooth', block:'start'}); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); } };
+
+/* ================= Quitar la cabecera C1 de Expedición (petición del responsable) ================= */
+function ensureNoC1(){
+  const a = DB.alms.find(x => x.layout === 'exp'); if (!a || (DB.expV || 0) < 10 || (DB.expV || 0) >= 11) return false;
+  if (typeof SYNC !== 'undefined' && SYNC.db) { if (!SYNC.on || SYNC.ro || !SYNC.cellsReady || SYNC.role === 'op') return false; }
+  if (!a.racks.some(r => r.id === 'C1')) { DB.expV = 11; save(); return false; }
+  const cs = almCodes(a.id).filter(k => M(k).rack === 'C1'); if (cs.some(k => DB.cells[k] && DB.cells[k].state !== 'libre')) return false; /* con material: no se toca */
+  dropCodes(cs); a.racks = a.racks.filter(r => r.id !== 'C1'); if (a.plan && a.plan.racks) delete a.plan.racks.C1;
+  DB.expV = 11; buildIndex();
+  addLog({type:'Configuración', code:'', note:'Quitada la cabecera C1 de ' + a.code + ' (' + cs.length + ' ubicaciones vacías)', user:'Sistema'});
+  return true;
+}
+
+/* ================= Barra inferior para móvil y menú «Más» con botones grandes ================= */
+const OPHIDE = new Set(['ped', 'naves']);
+/* con la clave de operario se ocultan los botones que solo puede usar el responsable */
+function opTidy(){ if (!isOp()) return; document.querySelectorAll('#app [data-a], header [data-a], .devfoot [data-a]').forEach(el => { if (OP_BLOCK.has(el.dataset.a)) el.hidden = true; }); }
+const BN_ICO = {
+  ini:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>',
+  pda:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7V4h3M17 4h3v3M20 17v3h-3M7 20H4v-3M7 12h10"/></svg>',
+  mapa:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>',
+  comp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4h6v3H9zM9 13l2 2 4-4"/></svg>',
+  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>'
+};
+const MORE_TABS = [['ini', 'Inicio', 'Lo que hay que hacer hoy'], ['pda', 'PDA · escanear', 'Ubicar, recoger, mover y consultar'], ['entr', 'Ubicar', 'Registrar una entrada con formulario'], ['mapa', 'Mapa', 'Ver el almacén en 3D'],
+  ['comp', 'Pedidos completos', 'Listos para preparar'], ['inc', 'Pedidos incompletos', 'Esperando algún PT'], ['muelle', 'Muelle', 'Preparado, por cargar'], ['lst', 'Listados', 'Listas de recogida'],
+  ['sal', 'Salidas sueltas', 'Sacar material sin pedido'], ['ubic', 'Ubicaciones', 'Tabla de todas las ubicaciones'], ['mov', 'Movimientos', 'Historial de entradas y salidas'], ['inv', 'Inventario', 'Recuento y ocupación'],
+  ['ped', 'Importar pedidos', 'Excel del ERP'], ['naves', 'Naves y almacenes', 'Estanterías, conexión y clientes']];
+function bnavInit(){
+  if (document.getElementById('bnav')) return;
+  const n = document.createElement('nav'); n.id = 'bnav'; n.className = 'bnav'; n.setAttribute('aria-label', 'Menú rápido');
+  n.innerHTML = [['ini', 'Inicio'], ['pda', 'Escanear'], ['mapa', 'Mapa'], ['comp', 'Pedidos']].map(([t, l]) => '<button type="button" data-a="tab" data-tab="' + t + '">' + BN_ICO[t] + '<span>' + l + '</span></button>').join('')
+    + '<button type="button" data-a="bnavMore" class="bnm">' + BN_ICO.more + '<span>Más</span></button>';
+  document.body.appendChild(n);
+}
+A.bnavMore = () => { const hid = (DB.dev && DB.dev.tabsOcultas) || [];
+  const ts = MORE_TABS.filter(([t]) => VIEWS[t] && !(hid.includes(t) && !DEV.ok) && !(isOp() && OPHIDE.has(t)));
+  openDlg('<h2>¿Adónde quieres ir?</h2><div class="moregrid">' + ts.map(([t, l, s]) => '<button type="button" class="moreb' + (t === UI.tab ? ' on' : '') + '" data-a="bnavGo" data-tab="' + t + '"><b>' + l + '</b><small>' + s + '</small></button>').join('') + '</div>'
+    + '<div class="row" style="justify-content:space-between"><button type="button" class="btn" data-a="xlsAll">Exportar a Excel</button><button type="button" class="btn btn-dark" data-a="close">Cerrar</button></div>'); };
+A.bnavGo = d => { dlg.close(); setTab(d.tab); };
+['m3Mode', 'm3Zoom', 'm3Rot', 'm3Tilt', 'm3Fit', 'm3Detail', 'bnavMore', 'bnavGo'].forEach(x => PRO_OPEN.add(x));
+bnavInit();
 
 cfgFromHash();
 load(); loadUI();
