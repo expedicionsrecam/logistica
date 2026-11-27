@@ -13458,8 +13458,10 @@ function release(code, user, uid){ const c = DB.cells[code], its = items(c), out
   if (!its.length) { DB.cells[code] = {state:'libre'}; save(); return; }
   out.forEach(x => addLog({type, code, uid:x.uid, of:x.of, ref:x.ref, client:x.client, qty:x.qty, user:user || curUser()}));
   setItems(code, its.filter(x => !out.includes(x)), c.state); save(); }
-function move(from, to, user){ const c = DB.cells[from]; DB.cells[to] = Object.assign({}, c, {date:new Date().toISOString()}); DB.cells[from] = {state:'libre'};
-  items(c).forEach(x => addLog({type:'Movimiento', code:from, to, uid:x.uid, of:x.of, ref:x.ref, client:x.client, qty:x.qty, note:items(c).length > 1 ? 'Ubicación con ' + items(c).length + ' bultos' : '', user:user || curUser()})); }
+function move(from, to, user){ const c = DB.cells[from], dest = DB.cells[to];
+  if (!hasGoods(c) || (dest && dest.state !== 'libre')) { toast(!hasGoods(c) ? 'El material ya no está en ' + from + ': lo ha cambiado otro dispositivo.' : to + ' ya no está libre: elige otro destino.'); return false; }
+  DB.cells[to] = Object.assign({}, c, {date:new Date().toISOString()}); DB.cells[from] = {state:'libre'};
+  items(c).forEach(x => addLog({type:'Movimiento', code:from, to, uid:x.uid, of:x.of, ref:x.ref, client:x.client, qty:x.qty, note:items(c).length > 1 ? 'Ubicación con ' + items(c).length + ' bultos' : '', user:user || curUser()})); return true; }
 function adjust(code, qty, user, uid){ const c = DB.cells[code], its = items(c), it = (uid && its.find(x => x.uid === uid)) || its[0]; if (!it) return false;
   const old = +it.qty || 0; qty = Math.max(0, Math.round(+qty || 0)); if (qty === old) return false;
   if (qty === 0) { const rest = its.filter(x => x !== it); setItems(code, rest, c.state); addLog({type:'Ajuste', code, uid:it.uid, of:it.of, client:it.client, qty:0, note:'De ' + old + ' a 0 uds · ' + (rest.length ? 'bulto retirado de la ubicación' : 'ubicación liberada'), user:user || curUser()}); return true; }
@@ -13800,9 +13802,9 @@ function vPda(){
   const withGoods = routeSort(codesA.filter(k => ['ocupada','parcial'].includes(DB.cells[k].state)));
   const someOfs = () => [...new Set(withGoods.map(k => DB.cells[k].of))].slice(0, 4);
   let body = '', foot = '';
-  const conn = typeof SYNC === 'undefined' ? '' : SYNC.ro ? '<div class="err" style="font-size:14px"><b>Solo lectura.</b> Esta cuenta no tiene permiso de edición: lo que hagas no se guardará. Pide acceso de edición al responsable.</div>'
+  const conn = typeof SYNC === 'undefined' ? '' : SYNC.ro ? '<div class="err" style="font-size:14px"><b>Solo lectura.</b> Lo que hagas no se guardará. Avisa al responsable.</div>'
     : SYNC.on ? '' : SYNC.db ? '<div class="ok" style="font-size:14px">Conectando con los datos compartidos…</div>'
-    : (PDEV.full ? '<div class="err" style="font-size:14px"><b>Sin conexión con la oficina.</b> Lo que registres aquí se queda solo en este dispositivo. Abre el enlace del artefacto en Chrome e inicia sesión en claude.ai con una cuenta con permiso de edición.</div>' : '');
+    : (PDEV.full ? '<div class="err" style="font-size:14px"><b>Sin conexión con la oficina.</b> Lo que registres aquí se queda solo en este dispositivo. Abre en Chrome el enlace o el QR para operarios que genera el responsable.</div>' : '');
   if (PDEV.full && !PDEV.op) {
     const ro = (v, l, d) => '<label class="pdopt"><input type="radio" name="pdi_l" value="' + v + '"' + ((PDEV.lector || (IS_TOUCH ? 'camara' : 'lector')) === v ? ' checked' : '') + '><span><b>' + l + '</b><br><small>' + d + '</small></span></label>';
     body = '<p style="margin:0;font-weight:700;font-size:17px">Configurar este dispositivo</p>' + conn
@@ -13901,7 +13903,7 @@ function pdaScan(){
   } else if (P.mode === 'mover') {
     const v = resolve(raw);
     if (!v || DB.cells[v].state !== 'libre') { P.msg = ['err','El destino tiene que ser una ubicación libre.']; return; }
-    move(P.d.from, v, pdaUser()); toast('Movido de ' + P.d.from + ' a ' + v); P.mode = 'menu'; P.step = 0; P.d = {};
+    if (move(P.d.from, v, pdaUser())) toast('Movido de ' + P.d.from + ' a ' + v); P.mode = 'menu'; P.step = 0; P.d = {};
   } else if (P.mode === 'consultar') {
     const pick = (k, f) => { const its = items(DB.cells[k]), it = its.find(f) || its[0]; P.d = {code:k, uid:it ? it.uid : null, adj:it ? it.qty || 0 : 0}; };
     const v = resolve(raw); if (v) { pick(v, x => x.uid === raw); return; }
@@ -13926,15 +13928,7 @@ function printLabels(codes, mode, withQty){
   if (w) { w.document.write(html); w.document.close(); }
   else saveFile('etiquetas-' + new Date().toISOString().slice(0,10) + '.html', html, 'Etiquetas descargadas: ábrelas e imprímelas en A4');
 }
-/* Dentro de claude.ai las descargas pasan por el visor (pide confirmación); fuera, descarga normal */
-async function saveFile(name, data, okMsg){
-  const host = window.claude && typeof window.claude.use === 'function';
-  if (host) {
-    let d = null; try { d = await window.claude.use('downloads'); } catch(e) {}
-    if (d) { try { await d.save({filename:name, data}); toast(okMsg || 'Archivo guardado: ' + name); } catch(e) { toast(e && e.code === 'declined' ? 'Descarga cancelada' : 'No se ha podido descargar el archivo aquí'); } return; }
-  }
-  download(new Blob([data]), name); if (okMsg) toast(okMsg);
-}
+async function saveFile(name, data, okMsg){ download(new Blob([data]), name); if (okMsg) toast(okMsg); }
 function download(blob, name){ const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = name; document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500); }
 function csv(rows, name){ const s = rows.map(r => r.map(v => { v = String(v ?? ''); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g,'""') + '"' : v; }).join(';')).join('\r\n'); saveFile(name, '\ufeff' + s); }
 
@@ -14032,7 +14026,7 @@ const A = {
       const sorted = a.id === M(from).alm ? fr.sort((x,y) => dist(xy(x), xy(from)) - dist(xy(y), xy(from))) : fr;
       return '<optgroup label="' + esc(almLabel(a) + ' · ' + ((naveById(a.naveId) || {}).code || '')) + '">' + sorted.map(k => '<option value="' + k + '">' + k + ' · ' + posText(k) + '</option>').join('') + '</optgroup>'; }).join('');
     openDlg('<h2>Mover ' + from + '</h2><p style="margin:0" class="muted">' + esc(items(DB.cells[from]).map(x => pzTxt(x.of) + ' · ' + x.uid).join(' | ')) + '</p><label class="f">Destino (este almacén ordenado por cercanía; también otros almacenes)<select id="mvto" class="input">' + opts + '</select></label>' + btnRow('moveYes', 'Mover')); },
-  moveYes: () => { const to = val('mvto'); if (!to) return dlgErr('No hay ubicaciones libres.'); move(UI.cell, to); dlg.close(); goMap(to); toast('Movido a ' + to); },
+  moveYes: () => { const to = val('mvto'); if (!to) return dlgErr('No hay ubicaciones libres.'); const moved = move(UI.cell, to); dlg.close(); if (!moved) return render(); goMap(to); toast('Movido a ' + to); },
   dlgAdj: d => { const its = items(DB.cells[UI.cell]), c = its.find(x => x.uid === (d && d.uid)) || its[0]; if (!c) return; openDlg('<h2>Ajustar cantidad · ' + UI.cell + '</h2><p style="margin:0" class="muted">' + esc(pzTxt(c.of) + ' · ' + c.uid) + '</p><label class="f">Cantidad real (uds)<input id="adjq" class="input" type="number" min="0" value="' + c.qty + '"></label><p class="muted" style="margin:0;font-size:13px">La etiqueta de contenido no cambia: el QR apunta a ' + c.uid + ' y al escanearlo se ve esta cantidad. Con 0 ' + (its.length > 1 ? 'se retira este bulto de la ubicación' : 'se libera la ubicación') + '.</p>' + btnRow('adjYes', 'Guardar'), {uid:c.uid}); },
   adjYes: () => { const n = int('adjq', 0, 100000); if (n === null) return dlgErr('Indica una cantidad válida.'); const ch = adjust(UI.cell, n, undefined, DLG.uid); dlg.close(); if (ch) toast('Cantidad actualizada'); render(); },
   freeItem: d => { release(UI.cell, null, d.uid); toast('Bulto ' + d.uid + ' sacado de ' + UI.cell); render(); },
@@ -14535,7 +14529,8 @@ function erpImpYes(){
 /* compartir los pedidos: varios documentos de hasta 1000 líneas + uno con los datos del fichero */
 const ERP_CH = 1000;
 async function erpPush(clear){
-  if (typeof SYNC === 'undefined' || !SYNC.on || SYNC.ro || !SYNC.db || SYNC.db === 'pending') return; const db = SYNC.db; SYNC.erpBusy = true;
+  if (typeof SYNC === 'undefined' || !SYNC.on || SYNC.ro || !SYNC.db || SYNC.db === 'pending') return; const db = SYNC.db;
+  const mark = SYNC.erpDirty = {clear:!!clear}; pendSave(); if (SYNC.erpBusy) return; SYNC.erpBusy = true;
   try {
     if (clear || !DB.erp) { await db.doc('erp/meta').set({deleted:true, at:new Date().toISOString()}); SYNC.erpAt = null; }
     else { const E = DB.erp, parts = Math.max(1, Math.ceil(E.lines.length / ERP_CH));
@@ -14543,10 +14538,12 @@ async function erpPush(clear){
       await db.doc('erp/meta').set({file:E.file, at:E.at, user:E.user, map:E.map || {}, n:E.lines.length, parts}); SYNC.erpAt = E.at; }
     const q = await db.collection('erp').get(), keep = clear || !DB.erp ? 0 : Math.max(1, Math.ceil(DB.erp.lines.length / ERP_CH));
     for (const d of q.docs) { const m = /^p(\d+)$/.exec(d.id); if (m && +m[1] >= keep) await db.doc('erp/' + d.id).delete(); }
-  } catch(err) { syncErr(err); } finally { SYNC.erpBusy = false; }
+    if (SYNC.erpDirty === mark) SYNC.erpDirty = null;
+  } catch(err) { if (err && err.code === 'forbidden') SYNC.erpDirty = null; syncErr(err); }
+  finally { SYNC.erpBusy = false; pendSave(); if (SYNC.erpDirty && SYNC.erpDirty !== mark) queueSync(); }
 }
 function erpApply(){
-  const m = SYNC.erpSnap; if (!m || SYNC.erpBusy || !SYNC.on) return; const meta = m.meta;
+  const m = SYNC.erpSnap; if (!m || SYNC.erpBusy || SYNC.erpDirty || !SYNC.on) return; const meta = m.meta;
   if (!meta) { if (DB.erp && !SYNC.ro) erpPush(); return; }
   if (meta.deleted) { if (DB.erp) { DB.erp = null; save(true); schedRender(); } return; }
   if (DB.erp && DB.erp.at === meta.at) return;
@@ -14699,8 +14696,11 @@ document.addEventListener('keydown', ev => {
 }, true);
 /* lista compartida entre dispositivos: documento config/clientes */
 async function cliPush(){ if (typeof SYNC === 'undefined' || !SYNC.on || SYNC.ro || !SYNC.db || SYNC.db === 'pending') return;
-  try { await SYNC.db.doc('config/clientes').set({list:cliList(), at:new Date().toISOString()}); } catch(err) { syncErr(err); } }
-function cliApply(){ const s = SYNC.cliSnap; if (!s || !SYNC.on) return;
+  const mark = SYNC.cliDirty = {}; pendSave();
+  try { await SYNC.db.doc('config/clientes').set({list:cliList(), at:new Date().toISOString()}); if (SYNC.cliDirty === mark) SYNC.cliDirty = null; }
+  catch(err) { if (err && err.code === 'forbidden') SYNC.cliDirty = null; syncErr(err); }
+  pendSave(); }
+function cliApply(){ const s = SYNC.cliSnap; if (!s || !SYNC.on || SYNC.cliDirty) return;
   if (!s.exists) { if (!SYNC.ro) cliPush(); return; }
   if (Array.isArray(s.list) && JSON.stringify(s.list) !== JSON.stringify(cliList())) { DB.clis = s.list.slice(); save(true); schedRender(); } }
 function cliSubscribe(db){ db.doc('config/clientes').onSnapshot(s => { if (s.metadata && s.metadata.fromCache && !s.exists) return; SYNC.cliSnap = {exists:s.exists, list:s.exists ? (s.data() || {}).list : null}; cliApply(); }, syncErr); }
@@ -14802,7 +14802,7 @@ document.addEventListener('keydown', ev => { const g = ev.target.closest && ev.t
 
 /* ================= etiqueta interna Recam: leer CDA, PT, cliente y cantidad con la cámara ================= */
 /* Etiqueta: cliente (texto grande arriba a la derecha) · Cda. Recam = CDA · Ref. Recam = PT · Qtt PAQ. = cantidad.
-   Se lee el texto impreso de la foto con Claude (solo abriendo el módulo desde claude.ai); el QR no se usa */
+   Se lee el texto impreso de la foto (OCR de Google o del propio dispositivo); el QR no se usa */
 /* nombre de la etiqueta (a veces cortado: «STADLER RAIL VALENCIA») → nombre de la lista de clientes */
 function cliFuzzy(v){ const t = cliClean(v); if (!t) return ''; const k = cliKey(t), l = cliList();
   const ex = l.find(c => cliKey(c) === k); if (ex) return ex;
@@ -14882,7 +14882,7 @@ document.addEventListener('click', ev => { const b = ev.target.closest('[data-ca
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && document.getElementById('camov')) camStop(); });
 A.camGo = d => camGo(d.x === 'pda' ? (UI.pda.mode === 'ubicar' && UI.pda.step === 0 ? 'pdaL' : 'pdaQ') : d.x);
 
-/* ================= Google Sheets: datos compartidos sin depender de Claude =================
+/* ================= Google Sheets: datos compartidos =================
    El módulo habla con un script de Google (Apps Script) pegado en una Hoja de Google.
    Imita las llamadas de base de datos que ya usaba el módulo (doc, collection, set, update, delete, onSnapshot)
    y trae los cambios de los demás dispositivos cada pocos segundos. */
@@ -14894,48 +14894,78 @@ const cfgEncode = c => btoa(unescape(encodeURIComponent(JSON.stringify({u:c.url,
 function cfgFromHash(){ const m = /[#&]cfg=([A-Za-z0-9_-]+)/.exec(location.hash || ''); if (!m) return false;
   try { const j = JSON.parse(decodeURIComponent(escape(atob(m[1].replace(/-/g, '+').replace(/_/g, '/'))))); if (j.u && j.k) { setSheetsCfg({url:j.u, key:j.k}); }
     const h = (location.hash || '').replace(/[#&]?cfg=[A-Za-z0-9_-]+/, ''); history.replaceState(null, '', location.pathname + location.search + (h && h !== '#' ? h : '')); return true; } catch(e) { return false; } }
-const appBase = () => /^https?:$/.test(location.protocol) && !/(^|\.)claude(usercontent)?\.(ai|com)$/.test(location.hostname) ? location.origin + location.pathname : '';
+const appBase = () => /^https?:$/.test(location.protocol) ? location.origin + location.pathname : '';
 function sheetsDb(cfg){
-  const docs = {}, subs = []; let rev = 0, ready = false, q = [], qt = null, stopped = false;
-  async function call(body){
-    let r; try { r = await fetch(cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(Object.assign({key:cfg.key}, body)), redirect:'follow'}); }
-    catch(e) { throw {code:'unavailable', message:'Sin conexión'}; }
-    let j = null; try { j = await r.json(); } catch(e) { throw {code:'unavailable', message:'Respuesta no válida del script'}; }
+  const docs = {}, vers = {}, subs = []; let rev = 0, ready = false, api = 1, q = [], qt = null, pt = null, polling = false, again = false, stopped = false;
+  async function call(body, ms){
+    const ac = typeof AbortController === 'function' ? new AbortController() : null, to = ac ? setTimeout(() => ac.abort(), ms) : null;
+    let r, j = null;
+    try {
+      try { r = await fetch(cfg.url, {method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(Object.assign({key:cfg.key}, body)), redirect:'follow', cache:'no-store', signal:ac ? ac.signal : undefined}); }
+      catch(e) { throw {code:'unavailable', message:'Sin conexión'}; }
+      try { j = await r.json(); } catch(e) { throw {code:'unavailable', message:'Respuesta no válida del script'}; }
+    } finally { clearTimeout(to); }
     if (j && j.error) throw {code:j.error, message:j.message || j.error};
     return j;
   }
+  /* guarda un documento en la copia local; nunca sustituye una versión nueva por otra más antigua */
+  function keep(path, data, ver){ if (ver !== undefined) { if (vers[path] !== undefined && ver < vers[path]) return false; vers[path] = ver; }
+    if (data === undefined || data === null) { if (docs[path] === undefined) return false; delete docs[path]; return true; }
+    const ch = JSON.stringify(docs[path]) !== JSON.stringify(data); docs[path] = data; return ch; }
   const kids = p => Object.keys(docs).filter(k => k.startsWith(p + '/') && k.split('/').length === p.split('/').length + 1).sort();
   const dsnap = p => ({id:p.split('/').pop(), exists:docs[p] !== undefined, data:() => docs[p], metadata:{fromCache:!ready, hasPendingWrites:false}});
   function qsnap(p, ord, lim){ let ks = kids(p);
-    if (ord) ks.sort((a, b) => String((docs[a] || {})[ord[0]] ?? '').localeCompare(String((docs[b] || {})[ord[0]] ?? '')) * (ord[1] === 'desc' ? -1 : 1));
+    const val = k => String((docs[k] || {})[ord[0]] ?? k.split('/').pop());
+    if (ord) ks.sort((a, b) => val(a).localeCompare(val(b)) * (ord[1] === 'desc' ? -1 : 1));
     if (lim) ks = ks.slice(0, lim); const ds = ks.map(dsnap);
     return {docs:ds, size:ds.length, empty:!ds.length, metadata:{fromCache:!ready, hasPendingWrites:false}, docChanges:() => []}; }
   function fire(){ subs.forEach(s => { try { s.next(s.doc ? dsnap(s.path) : qsnap(s.path, s.ord, s.lim)); } catch(e) { console.error(e); } }); }
+  /* una sola cadena de consultas: pedir otra solo adelanta la siguiente */
   async function poll(){
     if (stopped) return;
-    try { const j = await call({op:'pull', since:rev}); let ch = !ready;
-      (j.docs || []).forEach(d => { if (d.deleted) { if (docs[d.path] !== undefined) { delete docs[d.path]; ch = true; } } else { docs[d.path] = d.data; ch = true; } });
-      rev = j.rev || rev; SYNC.role = j.role === 'op' ? 'op' : 'admin'; SYNC.opKey = j.opKey || ''; ready = true; SYNC.badKey = false; SYNC.offline = false; if (ch) fire(); }
+    if (polling) { again = true; return; }
+    polling = true; clearTimeout(pt);
+    try { const j = await call({op:'pull', since:rev}, 25000); let ch = !ready;
+      const back = !ready || SYNC.offline || SYNC.badKey, old = !(j.api >= 2), oldCh = old !== SYNC.oldServer; api = old ? 1 : j.api;
+      (j.docs || []).forEach(d => { if (keep(d.path, d.deleted ? null : d.data, d.ver)) ch = true; });
+      rev = j.rev || rev; SYNC.role = j.role === 'op' ? 'op' : 'admin'; SYNC.opKey = j.opKey || ''; SYNC.oldServer = old; ready = true; SYNC.badKey = false; SYNC.offline = false;
+      if (ch) fire();
+      if (back || oldCh) { setStatus(); if (back) queueSync(); } }
     catch(e) { if (e.code === 'bad_key') { SYNC.badKey = true; setStatus(); } else if (ready) { SYNC.offline = true; setStatus(); } }
-    setTimeout(poll, document.hidden ? 20000 : 4000);
+    polling = false;
+    const wait = again ? 200 : document.hidden ? 30000 : 3000; again = false;
+    clearTimeout(pt); pt = setTimeout(poll, wait);
   }
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && ready) { clearTimeout(qt); poll(); } });
+  const wake = () => { if (!document.hidden) poll(); };
+  document.addEventListener('visibilitychange', wake); window.addEventListener('online', wake); window.addEventListener('pageshow', wake);
   /* escrituras: se agrupan en una sola petición */
   function send(){ const batch = q; q = []; qt = null;
-    call({op:'write', ops:batch.map(b => b.op)}).then(j => { batch.forEach((b, i) => { const r = (j.results || [])[i];
-        if (r === 'ok') { if (b.op.op === 'delete') delete docs[b.op.path]; else if (b.op.op === 'set') docs[b.op.path] = b.op.data; else docs[b.op.path] = Object.assign({}, docs[b.op.path] || {}, b.op.data); b.ok(); }
-        else b.ko({code:r || 'unavailable'}); }); },
+    call({op:'write', ops:batch.map(b => b.op)}, 45000).then(j => { const done = [];
+        batch.forEach((b, i) => { const r = (j.results || [])[i];
+          if (r === 'ok') { const v = j.vers ? j.vers[i] : undefined, o = b.op;
+            keep(o.path, o.op === 'delete' ? null : o.op === 'set' ? o.data : Object.assign({}, docs[o.path] || {}, o.data), v); done.push(() => b.ok({ok:true})); }
+          else if (r && r.conflict) { keep(b.op.path, r.data, r.ver); done.push(() => b.ok({conflict:true})); }
+          else done.push(() => b.ko({code:r === 'permission_denied' ? 'forbidden' : r || 'unavailable'})); });
+        fire(); done.forEach(f => f()); poll(); },
       e => batch.forEach(b => b.ko(e))); }
   const write = op => new Promise((ok, ko) => { q.push({op, ok, ko}); if (!qt) qt = setTimeout(send, 40); });
+  const whenReady = () => ready ? Promise.resolve() : new Promise(r => { const t = setInterval(() => { if (ready) { clearInterval(t); r(); } }, 200); });
   function docRef(path){ return {path, id:path.split('/').pop(),
     set:d => write({op:'set', path, data:plain(d)}), update:d => write({op:'update', path, data:plain(d)}), delete:() => write({op:'delete', path}),
-    get:async () => { if (!ready) await new Promise(r => { const t = setInterval(() => { if (ready) { clearInterval(t); r(); } }, 200); }); return dsnap(path); },
+    /* leer, combinar y escribir sin pisar a nadie: si otro lo cambió, se combina de nuevo */
+    transact:async fn => { for (let n = 0; n < 6; n++) { await whenReady();
+        const cur = docs[path] === undefined ? null : plain(docs[path]), next = fn(cur === null ? null : plain(cur));
+        if (stable(next) === stable(cur)) return next;
+        const op = next === null ? {op:'delete', path} : {op:'set', path, data:plain(next)}; if (api >= 2) op.base = vers[path] || 0;
+        const r = await write(op); if (!r.conflict) return next; }
+      throw {code:'unavailable', message:'Demasiados cambios a la vez'}; },
+    get:async () => { await whenReady(); return dsnap(path); },
     onSnapshot(next, error){ const s = {doc:true, path, next, error}; subs.push(s); if (ready) setTimeout(() => next(dsnap(path)), 0); return () => { const i = subs.indexOf(s); if (i >= 0) subs.splice(i, 1); }; }}; }
   function query(path, ord, lim){ return {path, orderBy:(f, d) => query(path, [f, d || 'asc'], lim), limit:n => query(path, ord, n), doc:id => docRef(path + '/' + id),
-    get:async () => { if (!ready) await new Promise(r => { const t = setInterval(() => { if (ready) { clearInterval(t); r(); } }, 200); }); return qsnap(path, ord, lim); },
+    get:async () => { await whenReady(); return qsnap(path, ord, lim); },
     onSnapshot(next, error){ const s = {doc:false, path, ord, lim, next, error}; subs.push(s); if (ready) setTimeout(() => next(qsnap(path, ord, lim)), 0); return () => { const i = subs.indexOf(s); if (i >= 0) subs.splice(i, 1); }; }}; }
   poll();
-  return {doc:docRef, collection:p => query(p), stop:() => { stopped = true; }};
+  return {doc:docRef, collection:p => query(p), stop:() => { stopped = true; clearTimeout(pt); }};
 }
 
 /* ---- copia de seguridad (para pasar los datos de un sitio a otro) ---- */
@@ -14955,7 +14985,7 @@ async function backupFile(input){ const f = input.files && input.files[0]; input
 
 /* ---- tarjeta «Conexión de datos» (Naves y almacenes) ---- */
 function connCard(){
-  const c = sheetsCfg(), st = c ? (SYNC.badKey ? '<b style="color:var(--red)">Clave incorrecta</b>: revisa la clave del script.' : SYNC.on ? '● Conectado a Google Sheets' + (SYNC.offline ? ' · <b style="color:var(--red)">sin conexión ahora</b>, los cambios se envían al volver' : '') : 'Conectando con Google Sheets…') : (typeof SYNC !== 'undefined' && SYNC.on ? 'Datos en claude.ai' : 'Datos solo en este dispositivo');
+  const c = sheetsCfg(), st = c ? (SYNC.badKey ? '<b style="color:var(--red)">Clave incorrecta</b>: revisa la clave del script.' : SYNC.on ? '● Conectado a Google Sheets' + (SYNC.offline ? ' · <b style="color:var(--red)">sin conexión ahora</b>, los cambios se envían al volver' : '') : 'Conectando con Google Sheets…') : 'Datos solo en este dispositivo';
   return '<section class="card" style="display:flex;flex-direction:column;gap:10px"><div class="row" style="justify-content:space-between"><div><h2>Conexión de datos</h2><p class="muted" style="margin:4px 0 0;font-size:14px">' + st + '</p></div><div class="row">'
     + (c ? (isOp() ? '<button class="btn" data-a="shLink">Enlace para otro operario</button>' : '<button class="btn btn-pri" data-a="shLink" data-r="op">Enlace para operarios</button><button class="btn" data-a="shLink">Enlace de responsable</button>') + '<button class="btn" data-a="shOff">Desconectar este dispositivo</button>' : '<button class="btn btn-pri" data-a="shDlg">Conectar con Google Sheets</button>') + '</div></div>'
     + '<div class="row"><input type="file" id="bkFile" accept=".json,application/json" hidden><button class="btn btn-sm" data-a="bkSave">Descargar copia de seguridad</button><button class="btn btn-sm" data-a="bkPick">Restaurar copia</button><span class="muted" style="font-size:13px">Sirve para pasar los datos de un sitio a otro o guardarlos aparte.</span></div></section>';
@@ -14979,7 +15009,7 @@ Object.assign(A, {
     if (d && d.r === 'op') { if (!SYNC.opKey) return openDlg('<h2>Enlace para operarios</h2><p style="margin:0">El script de la hoja de Google todavía no tiene clave de operario. Pega la última versión del script, ejecuta <b>configurarClave</b> y vuelve a publicarlo.</p><div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-dark" data-a="close">Entendido</button></div>'); c = {url:c.url, key:SYNC.opKey}; }
     if (!base) return openDlg('<h2>Enlace para otros dispositivos</h2><p style="margin:0">Abre el módulo desde su dirección web (por ejemplo, la de GitHub Pages) para generar el enlace.</p><div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-dark" data-a="close">Entendido</button></div>');
     const link = base + '#cfg=' + cfgEncode(c); let qr = ''; try { const g = qrcode(0, 'L'); g.addData(link); g.make(); qr = '<img src="' + g.createDataURL(4, 2) + '" alt="QR de configuración" style="display:block;margin:0 auto;max-width:100%;image-rendering:pixelated">'; } catch(e) {}
-    openDlg('<h2>' + (forOp ? 'Enlace para operarios' : 'Enlace de responsable') + '</h2><p style="margin:0;font-size:14px">Escanea este QR con el móvil o la tablet (o envía el enlace). Se abre el módulo ya conectado a la hoja, sin cuenta de Claude. ' + (forOp ? 'Con este enlace se puede <b>ubicar, sacar, mover y ajustar cantidades</b>, pero no cambiar el plano, las estanterías, los pedidos del ERP ni los clientes.' : '<b>Este enlace da control total.</b> Úsalo solo en tus dispositivos; a los operarios dales el otro.') + '</p>' + qr
+    openDlg('<h2>' + (forOp ? 'Enlace para operarios' : 'Enlace de responsable') + '</h2><p style="margin:0;font-size:14px">Escanea este QR con el móvil o la tablet (o envía el enlace). Se abre el módulo ya conectado a la hoja, sin necesidad de ninguna cuenta. ' + (forOp ? 'Con este enlace se puede <b>ubicar, sacar, mover y ajustar cantidades</b>, pero no cambiar el plano, las estanterías, los pedidos del ERP ni los clientes.' : '<b>Este enlace da control total.</b> Úsalo solo en tus dispositivos; a los operarios dales el otro.') + '</p>' + qr
       + '<div class="row" style="flex-wrap:nowrap"><input id="shl" class="input mono" readonly value="' + esc(link) + '" style="flex:1;font-size:12px"><button type="button" class="btn btn-sm" data-a="shCopy">Copiar</button></div><div class="row" style="justify-content:flex-end"><button type="button" class="btn btn-dark" data-a="close">Cerrar</button></div>'); },
   shCopy: async () => { const i = $('#shl'); try { await navigator.clipboard.writeText(i.value); toast('Enlace copiado'); } catch(e) { i.focus(); i.select(); toast('Selecciona el enlace y cópialo'); } },
   bkSave: () => saveFile('copia-almacenes-recam_' + stamp() + '.json', JSON.stringify(backupObj()), 'Copia de seguridad descargada'),
@@ -14987,7 +15017,7 @@ Object.assign(A, {
   bkYes: () => { const b = UI.bk; if (!b) return; dlg.close(); restoreBackup(b); addLog({type:'Configuración', code:'', note:'Copia de seguridad restaurada (' + fmtDT(b.at) + ')', user:PDEV.op ? pdaUser() : curUser()}); UI.bk = null; render(); toast('Copia restaurada'); }
 });
 
-/* ================= lectura de etiquetas en el propio dispositivo (OCR, sin Claude) ================= */
+/* ================= lectura de etiquetas en el propio dispositivo (OCR) ================= */
 const OCR = {w:null, p:null};
 function loadScript(src){ return new Promise((ok, ko) => { const s = document.createElement('script'); s.src = src; s.onload = ok; s.onerror = () => ko(new Error('carga')); document.head.appendChild(s); }); }
 async function ocrWorker(st){
@@ -15429,7 +15459,7 @@ document.addEventListener('change', ev => {
   if (k === 'trk') { UI.t.rack = v; UI.t.page = 0; } if (k === 'tst') { UI.t.st = v; UI.t.page = 0; } if (k === 'mt') UI.m.type = v; if (k === 'ma') UI.m.alm = v; if (k === 'ifc') UI.i.face = v; if (k === 'psc') UI.p.scope = v;
   if (k === 'ctxalm' || k === 'pdaalm') { setAlm(v); UI.pda.msg = null; }
   render(); });
-document.addEventListener('keydown', ev => { if (ev.key !== 'Enter') return; const t = ev.target; if (!t.dataset || dlg.contains(t) || t.id === 'chatIn') return;
+document.addEventListener('keydown', ev => { if (ev.key !== 'Enter') return; const t = ev.target; if (!t.dataset || dlg.contains(t)) return;
   if (t.dataset.enter === 'pdaScan') { ev.preventDefault(); A.pdaScan(); }
   else if (t.id === 'e_scan') { ev.preventDefault(); A.placeScan(); }
   else if (t.id && t.id.startsWith('e_')) { ev.preventDefault(); A.suggest(); }
@@ -15437,155 +15467,12 @@ document.addEventListener('keydown', ev => { if (ev.key !== 'Enter') return; con
   else if (t.id === 'pda_ped') { ev.preventDefault(); const n = $('#pda_pt'); if (n) n.focus(); }
   else if (t.id === 'pda_pt') { ev.preventDefault(); A.pdaPzGo(); } });
 
-/* ================= asistente (chat con Claude, solo lectura) ================= */
-const CHAT = {turns:[], busy:false, ctl:null, open:false, sample:null};
-const CHAT_ICON = '<img src="' + LOGO_I + '" alt="" width="24" height="24">';
-function cellInfo(k){ const c = DB.cells[k], a = almOf(k), n = naveById(a.naveId); const o = {codigo:k, nave:n ? n.code + ' ' + n.nombre : '', almacen:a.nombre, posicion:posText(k), estado:ST[c.state]};
-  if (hasGoods(c)) Object.assign(o, {of:c.of, pedido:pedOf(c.of), pt:c.ref || ptOf(c.of), cliente:c.client || '', cantidad:c.qty, kg:c.kg || 0, id_contenido:c.uid, fecha:fmtD(c.date), dias_en_almacen:daysSince(c.date), salida_prevista:c.ship || '', bultos:items(c).map(x => ({pedido:pedOf(x.of), pt:x.ref || ptOf(x.of), cliente:x.client || '', cantidad:x.qty, id_contenido:x.uid, fecha:fmtD(x.date)}))});
-  if (c.state === 'bloqueada') o.motivo = c.reason; return o; }
-function almByText(t){ t = String(t || '').trim().toLowerCase(); if (!t) return null; return DB.alms.find(a => a.code.toLowerCase() === t || a.nombre.toLowerCase() === t) || DB.alms.find(a => a.nombre.toLowerCase().includes(t)) || null; }
-const CHAT_TOOLS = [
-  {name:'buscar_material', description:'Busca material guardado (ocupado, parcial o reservado) por Pedido, PT, cliente o ID de contenido U-…, en todos los almacenes. Devuelve hasta 40 ubicaciones con sus datos y el total encontrado.',
-   inputSchema:{type:'object', properties:{texto:{type:'string', description:'Pedido, PT, cliente o U-…'}}, required:['texto']},
-   execute: i => { const r = routeSort(findGoods(String(i.texto || ''))); return {total:r.length, unidades:r.reduce((s,k) => s + (DB.cells[k].qty || 0), 0), ubicaciones:r.slice(0, 40).map(cellInfo)}; }},
-  {name:'consultar_ubicacion', description:'Detalle de una ubicación por su código (p. ej. EXP-P2A-03-2; sin prefijo se toma el almacén actual) o de un bulto U-…: estado, contenido y últimos 5 movimientos.',
-   inputSchema:{type:'object', properties:{codigo:{type:'string'}}, required:['codigo']},
-   execute: i => { const k = resolve(String(i.codigo || '')); if (!k) throw new Error('No existe la ubicación ' + i.codigo); return Object.assign(cellInfo(k), {movimientos:DB.log.filter(l => l.code === k || l.to === k).slice(0, 5).map(l => ({fecha:fmtDT(l.ts), tipo:l.type, destino:l.to || '', of:l.of || '', cantidad:l.qty ?? '', usuario:l.user, nota:l.note || ''}))}); }},
-  {name:'resumen_ocupacion', description:'Ocupación por almacén, o por estantería si se indica un almacén (código o nombre): total de ubicaciones, libres, ocupadas, parciales, reservadas, bloqueadas y % de ocupación.',
-   inputSchema:{type:'object', properties:{almacen:{type:'string', description:'Código o nombre del almacén (opcional)'}}},
-   execute: i => { const st = codes => { const c = s => codes.filter(k => DB.cells[k].state === s).length; return {total:codes.length, libres:c('libre'), ocupadas:c('ocupada'), parciales:c('parcial'), reservadas:c('reservada'), bloqueadas:c('bloqueada'), ocupacion_pct:Math.round(occ(codes)*100)}; };
-     const a = almByText(i.almacen); if (i.almacen && !a) throw new Error('No hay ningún almacén llamado ' + i.almacen);
-     if (a) { const cs = almCodes(a.id); return {almacen:a.nombre + ' (' + a.code + ')', nave:naveLabel(naveById(a.naveId)), global:st(cs), por_estanteria:a.racks.map(r => r.id).concat(a.floor ? ['S'] : []).map(r => Object.assign({estanteria: r === 'S' ? 'Suelo' : r}, st(cs.filter(k => M(k).rack === r))))}; }
-     return {almacenes:DB.alms.map(x => Object.assign({almacen:x.nombre + ' (' + x.code + ')', nave:naveLabel(naveById(x.naveId))}, st(almCodes(x.id))))}; }},
-  {name:'ubicaciones_libres', description:'Lista ubicaciones libres de un almacén, de la más cercana al muelle a la más lejana; opcionalmente de una estantería (p. ej. P3) o de un nivel. Devuelve el total y hasta 30 códigos.',
-   inputSchema:{type:'object', properties:{almacen:{type:'string'}, estanteria:{type:'string'}, nivel:{type:'integer'}}, required:['almacen']},
-   execute: i => { const a = almByText(i.almacen) || curAlm(); if (!a) throw new Error('No hay almacenes'); const r = i.estanteria ? up(i.estanteria) : '';
-     const fr = almCodes(a.id).filter(k => DB.cells[k].state === 'libre' && (!r || M(k).rack === r || FC(M(k).face).id === r) && (!i.nivel || M(k).level === +i.nivel)).sort((x,y) => dockDist(x) - dockDist(y));
-     return {almacen:a.nombre, total_libres:fr.length, ubicaciones:fr.slice(0, 30).map(k => k + ' (' + posText(k) + ')')}; }},
-  {name:'material_envejecido', description:'Material que lleva al menos N días en almacén (por defecto 11, es decir, más de 10), del más antiguo al más reciente, opcionalmente de un almacén. Hasta 40 resultados.',
-   inputSchema:{type:'object', properties:{dias:{type:'integer'}, almacen:{type:'string'}}},
-   execute: i => { const d = +i.dias || 11, a = almByText(i.almacen); const r = (a ? almCodes(a.id) : IDX.all).filter(k => { const c = DB.cells[k]; return hasGoods(c) && c.state !== 'reservada' && daysSince(c.date) >= d; }).sort((x,y) => daysSince(DB.cells[y].date) - daysSince(DB.cells[x].date));
-     return {total:r.length, ubicaciones:r.slice(0, 40).map(cellInfo)}; }},
-  {name:'movimientos', description:'Historial de movimientos más recientes primero, filtrable por texto (ubicación, pedido, cliente, U-…, usuario), tipo (Entrada, Salida, Movimiento, Ajuste, Reserva, Anulación, Bloqueo, Desbloqueo, Recuento, Configuración) y últimos N días. Hasta 40.',
-   inputSchema:{type:'object', properties:{texto:{type:'string'}, tipo:{type:'string'}, dias:{type:'integer'}}},
-   execute: i => { const q = String(i.texto || '').toLowerCase(), t = String(i.tipo || '').toLowerCase(), lim = i.dias ? Date.now() - (+i.dias)*DAY : 0;
-     const r = DB.log.filter(l => (!q || [l.code, l.to, l.uid, l.of, l.ref, l.client, l.user, l.note].join(' ').toLowerCase().includes(q)) && (!t || String(l.type).toLowerCase() === t) && (!lim || new Date(l.ts).getTime() >= lim));
-     return {total:r.length, movimientos:r.slice(0, 40).map(l => ({fecha:fmtDT(l.ts), tipo:l.type, ubicacion:l.code || '', destino:l.to || '', of:l.of || '', cliente:l.client || '', cantidad:l.qty ?? '', usuario:l.user, nota:l.note || ''}))}; }},
-  {name:'mostrar_en_mapa', description:'Abre en pantalla el mapa con esa ubicación seleccionada para que el usuario la vea. Úsalo cuando pida verla o llevarle a ella.',
-   inputSchema:{type:'object', properties:{codigo:{type:'string'}}, required:['codigo']},
-   execute: i => { const k = resolve(String(i.codigo || '')); if (!k) throw new Error('No existe la ubicación ' + i.codigo); goMap(k); return 'Mapa abierto en ' + k; }}
-];
-function chatRules(){
-  const a = curAlm();
-  return 'Eres el asistente del módulo de almacén caótico de Recam Laser (empresa de corte láser). Respondes en español, breve y claro, a personal de producción y almacén.\n'
-    + 'Hoy es ' + fmtD(new Date().toISOString()) + '. Almacén seleccionado en pantalla: ' + (a ? a.nombre + ' (' + a.code + ')' : 'ninguno') + '. Pestaña abierta: ' + UI.tab + '.\n'
-    + 'Naves: ' + DB.naves.map(n => n.code + ' = ' + n.nombre).join('; ') + '.\n'
-    + 'Almacenes: ' + (DB.alms.map(x => x.code + ' = ' + x.nombre + ' en ' + ((naveById(x.naveId) || {}).code || '?') + ' (' + almCodes(x.id).length + ' ubicaciones; estanterías ' + x.racks.map(r => r.id).join(', ') + (x.floor ? '; ' + x.floor + ' palets en suelo' : '') + ')').join('; ') || 'ninguno') + '.\n\n'
-    + 'REGLAS\n- Para cualquier dato del almacén usa las herramientas; nunca inventes ubicaciones, cantidades ni pedido. Si no hay resultados, dilo.\n'
-    + '- Solo puedes consultar. No puedes registrar entradas, salidas, mover, ajustar ni configurar: explica en qué pestaña y con qué botón lo hace el usuario.\n'
-    + '- Escribe los códigos de ubicación completos (EXP-P2A-03-2): en pantalla se convierten en enlaces al mapa.\n'
-    + '- Formato: frases cortas, listas con "- " cuando haya varios elementos, **negrita** solo para lo clave. Sin tablas ni títulos.\n\n'
-    + 'CÓMO SE USA EL MÓDULO\n'
-    + '- Código de ubicación: ALMACÉN-ESTANTERÍA+CARA-MÓDULO-NIVEL (nivel 1 = abajo). Suelo: ALMACÉN-S-01. Cada caja recibe un ID de contenido U-000123.\n'
-    + '- Estados: Libre, Parcial (cabe más de la misma pieza), Ocupada, Reservada (para un pedido que aún no ha llegado), Bloqueada.\n'
-    + '- El selector «Nave y almacén» bajo la cabecera decide sobre qué almacén se trabaja.\n'
-    + '- Mapa: plano coloreado por ocupación, alzado de la estantería y detalle; desde el detalle: Mover, Ajustar cantidad, Sacar / liberar, Bloquear/Desbloquear, Confirmar entrada o Anular reserva, Imprimir etiqueta QR. Buscador «¿Dónde está?» en todos los almacenes.\n'
-    + '- Entradas: Pedido (número, ej. 373601), PT (código de producto, ej. 790522) y cantidad obligatorios (+ cliente, salida prevista) → Proponer ubicación → Ubicar aquí. Urgentes → zona de suelo (la más cercana al muelle). Resto → agrupado por cliente (misma estantería que ese cliente; si no tiene, una estantería vacía), cerca del muelle si sale en 3 días o menos.\n'
-    + '- Salidas / picking: buscar pedido o cliente, marcar recogidas, Confirmar salida (libera los huecos). Si sale solo una parte, usar Ajustar cantidad.\n'
-    + '- Ubicaciones: lista con filtros, selección múltiple (etiquetas, bloquear), Exportar CSV, Añadir estantería. Movimientos: historial y CSV. Inventario: ocupación por estantería, más de 10 días parado y recuento cíclico. Mapa: botón «Días parado» colorea el material (amarillo 0–5 días, naranja 6–10, rojo más de 10) (Correcto / Discrepancia).\n'
-    + '- PDA: elegir almacén de trabajo; Ubicar, Recoger, Mover, Consultar / ajustar escaneando QR. En un móvil Android: escanear el QR de la pestaña PDA, iniciar sesión en claude.ai, pulsar «Usar este dispositivo como PDA» (nombre del operario y lectura por cámara); se queda a pantalla completa y para salir hace falta el código de desarrollador.\n'
-    + '- Etiquetas: QR de ubicación (fijo, en la estantería) o QR de PT (uno por pedido_PT aunque esté en varias ubicaciones; sigue valiendo aunque cambie la cantidad).\n'
-    + '- Naves y almacenes: Nueva nave; Crear almacén (nombre, código fijo de 2–5 caracteres, estanterías, caras, módulos, niveles, suelo); Añadir/quitar estantería (solo vacías); Editar; Eliminar (solo vacíos).\n'
-    + '- Cabecera: Descargar HTML (copia sin conexión, sin asistente). En el artefacto los datos son compartidos en vivo entre oficina y PDA. Pie de página: Modo desarrollador (código del responsable): ocultar pestañas, cambiar el código y Borrar datos.';
-}
-function mdLite(t){
-  const linkCodes = s => s.replace(/\b([A-Z0-9]{2,5}-(?:[A-Z]{1,2}\d{1,2}[AB]-\d{2}-\d{1,2}|S-\d{2}))\b/g, (m) => M(m) ? '<button class="link" data-a="goMap" data-code="' + m + '">' + m + '</button>' : m);
-  const inline = s => linkCodes(esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>'));
-  const out = []; let list = null;
-  String(t).split('\n').forEach(line => { const m = /^\s*(?:[-*•]|\d+\.)\s+(.*)$/.exec(line);
-    if (m) { if (!list) list = []; list.push('<li>' + inline(m[1]) + '</li>'); return; }
-    if (list) { out.push('<ul>' + list.join('') + '</ul>'); list = null; }
-    if (line.trim()) out.push('<p>' + inline(line.replace(/^#+\s*/, '')) + '</p>'); });
-  if (list) out.push('<ul>' + list.join('') + '</ul>');
-  return out.join('');
-}
-const CHAT_SUGS = ['¿Dónde está el pedido …?', '¿Cuántas ubicaciones libres hay en cada almacén?', '¿Qué material lleva más de 10 días?', '¿Qué huecos libres hay en el nivel 1 de Expedición?', '¿Cómo creo un almacén nuevo?', '¿Qué se ha movido hoy?'];
-function chatErr(code){ return ({not_granted:'No has permitido que esta página use Claude. Puedes activarlo desde el menú Permisos del artefacto.', sampling_disabled:'Claude no está disponible para tu cuenta.', rate_limited:'Demasiadas preguntas seguidas o límite de uso alcanzado. Prueba dentro de un rato.', session_expired:'Tu sesión ha caducado: vuelve a iniciar sesión en claude.ai.', refused:'No puedo responder a eso. Prueba a preguntarlo de otra forma.', prompt_too_large:'La conversación es demasiado larga. Pulsa «Nueva» y vuelve a preguntar.', tools_unavailable:'Esta vista no permite al asistente consultar los datos.', empty_completion:'No he obtenido respuesta. Prueba a preguntarlo de otra forma.'})[code] || 'Se ha cortado la conexión. Vuelve a enviar la pregunta.'; }
-function chatRender(){
-  const p = $('#chatP'); if (!p) return;
-  const box = $('#chatMsgs');
-  let h = '';
-  if (!CHAT.turns.length) h = '<div class="msg a"><p>Hola. Puedo decirte dónde está el material, qué huecos hay libres, la ocupación, los movimientos y cómo se usa cada pantalla. Solo consulto: no cambio datos.</p></div><div class="sg">' + CHAT_SUGS.map(s => '<button data-a="chatSug" data-v="' + esc(s) + '">' + esc(s) + '</button>').join('') + '</div>';
-  CHAT.turns.forEach(t => { h += t.role === 'user' ? '<div class="msg u">' + esc(t.content) + '</div>' : t.err ? '<div class="msg e" role="alert">' + esc(t.content) + '</div>' : '<div class="msg a">' + (t.pending ? '<span class="st">' + esc(t.status || 'Pensando…') + '</span>' : mdLite(t.content)) + '</div>'; });
-  box.innerHTML = h; box.scrollTop = box.scrollHeight;
-  const b = $('#chatSend'); b.textContent = CHAT.busy ? 'Parar' : 'Enviar'; b.className = CHAT.busy ? 'stop' : ''; b.setAttribute('aria-label', CHAT.busy ? 'Parar la respuesta' : 'Enviar pregunta');
-}
-function chatToggle(open){ CHAT.open = open; $('#chatP').hidden = !open; $('#chatFab').hidden = open; if (open) { chatRender(); $('#chatIn').focus(); } else $('#chatFab').focus(); }
-function chatSnapshot(){
-  const lines = [];
-  DB.alms.forEach(a => { const cs = almCodes(a.id), c = st => cs.filter(k => DB.cells[k].state === st).length;
-    lines.push('ALMACÉN ' + a.code + ' ' + a.nombre + ' (nave ' + ((naveById(a.naveId) || {}).code || '') + '): ' + cs.length + ' ubicaciones, libres ' + c('libre') + ', ocupadas ' + c('ocupada') + ', parciales ' + c('parcial') + ', reservadas ' + c('reservada') + ', bloqueadas ' + c('bloqueada') + ', ocupación ' + Math.round(occ(cs)*100) + ' %');
-    a.racks.forEach(r => { const rc = cs.filter(k => M(k).rack === r.id); lines.push('  estantería ' + rackLab(a, r) + ': libres ' + rc.filter(k => DB.cells[k].state === 'libre').length + ' de ' + rc.length); }); });
-  const goods = routeSort(IDX.all.filter(k => DB.cells[k].state !== 'libre')).slice(0, 1500);
-  lines.push('', 'UBICACIONES NO LIBRES (código | estado | pedido_PT | PT | cliente | uds | días | U-ID | motivo):');
-  goods.forEach(k => { const c = DB.cells[k], its = items(c); (its.length ? its : [{}]).forEach(x => lines.push([k, ST[c.state], x.of || '', x.ref || '', x.client || '', x.qty ?? '', x.date ? daysSince(x.date) : '', x.uid || '', c.reason || ''].join(' | '))); });
-  lines.push('', 'ÚLTIMOS MOVIMIENTOS:');
-  DB.log.slice(0, 80).forEach(l => lines.push([fmtDT(l.ts), l.type, l.code || '', l.to || '', l.of || '', l.client || '', l.qty ?? '', l.user, l.note || ''].join(' | ')));
-  return lines.join('\n');
-}
-async function chatSend(text){
-  text = String(text || '').trim(); if (!text || CHAT.busy) return;
-  if (!CHAT.sample) { CHAT.turns.push({role:'user', content:text}); CHAT.turns.push({role:'assistant', err:true, content: CHAT.state === 'checking' ? 'Conectando con Claude… vuelve a enviar la pregunta en unos segundos.' : 'El asistente solo funciona con el módulo abierto en claude.ai (el artefacto «Almacenes Recam Laser»). En el archivo HTML descargado no está disponible.'}); chatRender(); return; }
-  const ctl = new AbortController(); CHAT.ctl = ctl; CHAT.busy = true;
-  CHAT.turns.push({role:'user', content:text});
-  const ans = {role:'assistant', content:'', pending:true, status:'Pensando…'}; CHAT.turns.push(ans); chatRender();
-  const hist = CHAT.turns.filter(t => !t.pending && !t.err).slice(-12);
-  while (hist.length && hist[0].role !== 'user') hist.shift();
-  const useTools = CHAT.tools !== false;
-  const tools = CHAT_TOOLS.map(t => Object.assign({}, t, {execute: (inp, cx) => { ans.status = 'Consultando datos…'; chatRender(); return t.execute(inp || {}, cx); }}));
-  try {
-    const rules = chatRules() + (useTools ? '' : '\n\nDATOS ACTUALES DEL ALMACÉN (no tienes herramientas; responde solo con estos datos):\n' + chatSnapshot());
-    const opts = {modelTier:'quick', cache:false, signal:ctl.signal}; if (useTools) opts.tools = tools;
-    const r = await CHAT.sample([{role:'user', content:rules}].concat(hist.map(t => ({role:t.role, content:t.content}))), Object.assign(opts, {
-      onText: ({text}) => { ans.pending = false; ans.content = text; chatRender(); }}));
-    ans.pending = false; ans.content = r.text + (r.truncated ? '\n\n(Respuesta cortada: pregunta algo más concreto.)' : '');
-  } catch(e) {
-    if (e && e.code === 'tools_unavailable' && CHAT.tools !== false) { CHAT.tools = false; CHAT.turns.splice(CHAT.turns.indexOf(ans) - 1, 2); CHAT.busy = false; CHAT.ctl = null; return chatSend(text); }
-    ans.pending = false;
-    if (e && e.code === 'cancelled') { ans.content = (e.text || '') + (e.text ? '\n\n' : '') + '(Respuesta detenida)'; }
-    else if (e && e.text && e.code !== 'refused') { ans.content = e.text; CHAT.turns.push({role:'assistant', err:true, content:chatErr(e.code)}); }
-    else { CHAT.turns.splice(CHAT.turns.indexOf(ans), 1); CHAT.turns.push({role:'assistant', err:true, content:chatErr(e && e.code)}); }
-    if (e && ['not_granted','sampling_disabled','not_declared','capability_disabled','capability_removed'].includes(e.code)) { CHAT.disabled = true; }
-  } finally { CHAT.busy = false; CHAT.ctl = null; chatRender(); }
-}
-async function initChat(){
-  const css = document.createElement('style'); css.textContent = "/* asistente (solo dentro de claude.ai) */\n.chatfab{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:30;min-height:50px;padding:0 20px 0 14px;border-radius:999px;border:2px solid var(--yellow);background:var(--ink);color:#fff;font-weight:700;font-size:15px;display:inline-flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.25)}\n.chatfab:hover{background:#262A33}\n.chatfab img{width:24px;height:24px;display:block}\n.chatp .ch img{width:28px;height:28px;display:block;flex:none}\n.chatp{position:fixed;right:calc(20px + env(safe-area-inset-right,0px));bottom:calc(20px + env(safe-area-inset-bottom,0px));z-index:31;width:min(430px,calc(100vw - 32px));height:min(640px,calc(100vh - 110px));background:var(--sf, #fff);border:1px solid var(--line2);border-radius:12px;box-shadow:0 16px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;overflow:hidden}\n.chatp .ch{background:var(--ink);color:#fff;padding:10px 12px 10px 16px;display:flex;align-items:center;gap:8px}\n.chatp .ch b{flex:1;font-size:15px}\n.chatp .ch small{display:block;font-weight:400;color:#B8BCC6;font-size:12px}\n.chatp .ch button{background:none;border:1px solid #3A3F4A;color:#D5D8DE;border-radius:6px;min-height:36px;padding:0 10px;font-size:12px}\n.chatp .cm{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;background:var(--soft)}\n.chatp .msg{max-width:88%;padding:10px 12px;border-radius:10px;font-size:14px;line-height:1.45;overflow-wrap:anywhere}\n.chatp .msg.u{align-self:flex-end;background:var(--ink);color:#fff;border-bottom-right-radius:3px;white-space:pre-wrap}\n.chatp .msg.a{align-self:flex-start;background:var(--sf, #fff);border:1px solid var(--line);border-bottom-left-radius:3px}\n.chatp .msg.a p{margin:0 0 6px}.chatp .msg.a p:last-child{margin:0}\n.chatp .msg.a ul{margin:4px 0 6px;padding-left:18px}\n.chatp .msg.a code{font-family:var(--mono);font-size:12px;background:var(--bg);padding:1px 4px;border-radius:3px}\n.chatp .msg.a .link{font-size:13px}\n.chatp .msg.e{align-self:stretch;background:#FCEBEA;border:1px solid #E3B4AF;color:#7A1A12;font-size:13px}\n.chatp .msg .st{color:var(--muted);font-size:12px;font-style:italic}\n.chatp .sg{display:flex;flex-wrap:wrap;gap:6px}\n.chatp .sg button{border:1px solid var(--line2);background:var(--sf, #fff);border-radius:999px;padding:6px 10px;font-size:13px;text-align:left}\n.chatp .cf{border-top:1px solid var(--line);padding:10px;display:flex;gap:8px;align-items:flex-end;background:var(--sf, #fff)}\n.chatp textarea{flex:1;min-width:0;resize:none;min-height:44px;max-height:120px;border:1px solid var(--line2);border-radius:8px;padding:10px;font:inherit;font-size:14px}\n.chatp .cf button{min-height:44px;min-width:44px;border-radius:8px;border:0;background:var(--yellow);color:var(--tx);font-weight:700;padding:0 14px}\n.chatp .cf button.stop{background:var(--ink);color:#fff}\n.chatp .note{font-size:11px;color:var(--muted);padding:0 12px 8px;background:var(--sf, #fff)}\n.chatp[hidden],.chatfab[hidden]{display:none!important}\n"; document.head.appendChild(css);
-  const wrap = document.createElement('div');
-  wrap.innerHTML = '<button class="chatfab" id="chatFab" data-a="chatOpen" aria-label="Abrir el asistente">' + CHAT_ICON + 'Asistente</button>'
-    + '<section class="chatp" id="chatP" role="dialog" aria-label="Asistente del almacén" hidden><div class="ch">' + CHAT_ICON + '<b>Asistente del almacén<small>Consulta los datos · no los modifica</small></b><button data-a="chatNew">Nueva</button><button data-a="chatClose" aria-label="Cerrar el asistente">Cerrar</button></div>'
-    + '<div class="cm" id="chatMsgs" aria-live="polite"></div><form class="cf" id="chatForm"><label class="sr" for="chatIn">Pregunta</label><textarea id="chatIn" rows="1" placeholder="Pregunta sobre el almacén…"></textarea><button id="chatSend" type="submit">Enviar</button></form><div class="note">Usa tu cuenta de Claude. Revisa los datos importantes en el mapa.</div></section>';
-  document.body.appendChild(wrap);
-  $('#chatForm').addEventListener('submit', ev => { ev.preventDefault(); if (CHAT.busy) { if (CHAT.ctl) CHAT.ctl.abort(); return; } const i = $('#chatIn'); const v = i.value; i.value = ''; chatSend(v); });
-  $('#chatIn').addEventListener('keydown', ev => { if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); $('#chatForm').requestSubmit(); } });
-  /* conexión con Claude: se busca en segundo plano; el botón se ve siempre */
-  CHAT.state = 'checking';
-  if (!(window.claude && typeof window.claude.use === 'function')) { CHAT.state = 'none'; wrap.hidden = true; return; }
-  let sm = null; try { sm = await window.claude.use('sample'); } catch(e) {}
-  if (!sm) { CHAT.state = 'none'; chatRender(); return; }
-  CHAT.sample = sm; CHAT.state = 'ok';
-  try { const lim = await sm.limits(); CHAT.tools = !!(lim && lim.tools); } catch(e) { CHAT.tools = false; }
-  chatRender();
-}
-A.chatOpen = () => chatToggle(true);
-A.chatClose = () => chatToggle(false);
-A.chatNew = () => { if (CHAT.ctl) CHAT.ctl.abort(); CHAT.turns = []; chatRender(); $('#chatIn').focus(); };
-A.chatSug = d => { if (/…\?$/.test(d.v)) { const i = $('#chatIn'); i.value = d.v.replace('…?', ''); i.focus(); } else chatSend(d.v); };
-
-/* ================= datos compartidos en vivo (base de datos del artefacto) =================
+/* ================= datos compartidos en vivo (Hoja de Google) =================
    config/estructura  → naves y almacenes
    cells/<código>     → una ficha por ubicación no libre (se borra al quedar libre)
    log/<AAAA-MM-DD>   → movimientos del día, {e: {<id>: movimiento}}                      */
-const SYNC = {db:null, on:false, ro:false, remoteCfg:false, seeded:false, cells:{}, remoteCells:{}, cfg:null, logq:[], timer:null, busy:false, again:false, rq:false};
+const SYNC = {db:null, on:false, ro:false, remoteCfg:false, seeded:false, cells:{}, remoteCells:{}, cfg:null, logq:[], timer:null, busy:false, again:false, rq:false,
+  synced:false, got:{}, sent:{}, pend:0, retry:null, fails:0, erpDirty:null, cliDirty:null, oldServer:false, tab:Math.random().toString(36).slice(2, 8), seq:0};
 const cellJSON = c => c && c.state && c.state !== 'libre' ? JSON.stringify(c) : null;
 /* estado de trabajo que también escriben los operarios (muelle, recuentos): va en un documento aparte de la configuración */
 const opsJSON = () => JSON.stringify(DB.ops || {});
@@ -15594,59 +15481,191 @@ const plain = o => JSON.parse(JSON.stringify(o));
 const newLogId = () => 'L' + Date.now().toString(36) + Math.floor(Math.random()*46656).toString(36).padStart(3, '0');
 function setStatus(){ const el = $('#savedInfo'); if (!el) return;
   if (UI.tab === 'pda' && SYNC.lastSt !== (SYNC.ro ? 'r' : SYNC.on ? 'o' : SYNC.db ? 'p' : 'n')) { SYNC.lastSt = SYNC.ro ? 'r' : SYNC.on ? 'o' : SYNC.db ? 'p' : 'n'; if (typeof schedRender === 'function' && document.readyState !== 'loading') setTimeout(schedRender, 0); }
-  el.textContent = SYNC.badKey ? 'Clave de conexión incorrecta' : SYNC.mode === 'sheets' && SYNC.on ? (SYNC.offline ? 'Sin conexión: se enviará al volver' : SYNC.role === 'op' ? '● Operario · Google Sheets' : '● Datos en Google Sheets') : SYNC.ro ? 'Solo lectura' : SYNC.on ? '● Datos compartidos en vivo' : SYNC.db ? (SYNC.slow ? 'Sin conexión con los datos compartidos' : 'Conectando…') : 'Datos solo en este equipo';
+  el.textContent = SYNC.badKey ? 'Clave de conexión incorrecta' : SYNC.on && !SYNC.offline && SYNC.pend ? '↑ Enviando ' + nCambios(SYNC.pend) + '…' : SYNC.mode === 'sheets' && SYNC.on ? (SYNC.offline ? 'Sin conexión' + (SYNC.pend ? ' · ' + nCambios(SYNC.pend) + ' por enviar' : '') : SYNC.role === 'op' ? '● Operario · Google Sheets' : '● Datos en Google Sheets') : SYNC.ro ? 'Solo lectura' : SYNC.on ? '● Datos compartidos' : SYNC.db ? (SYNC.slow ? 'Sin conexión con los datos compartidos' : 'Conectando…') : 'Datos solo en este equipo';
   syncBar();
-  el.title = SYNC.ro ? 'Puedes ver los datos, pero tu acceso no permite guardar cambios. Pide al propietario acceso de edición.' : SYNC.on ? 'Todos los que abren el artefacto ven y modifican los mismos datos al momento (oficina y PDA).' : 'Los datos se guardan en este navegador. Para compartirlos, abre el módulo desde el artefacto de claude.ai.'; }
+  el.title = SYNC.ro ? 'Puedes ver los datos, pero tu acceso no permite guardar cambios. Avisa al responsable.' : SYNC.on ? 'Todos los dispositivos conectados a la hoja ven y modifican los mismos datos en unos segundos (oficina y PDA).' : 'Los datos se guardan en este navegador. Para compartirlos, conecta el módulo a la Hoja de Google.'; }
 /* mientras no hay conexión con los datos compartidos no se puede modificar nada:
    así ningún dispositivo guarda cambios que luego se perderían al conectar */
 function syncBar(){
   let b = document.getElementById('syncbar');
   if (!b) { b = document.createElement('div'); b.id = 'syncbar'; b.className = 'syncbar'; b.setAttribute('role', 'status'); document.body.appendChild(b); }
-  const wait = !!SYNC.db && !SYNC.on, warn = !wait && !SYNC.db && SYNC.noDb;
+  const wait = !!SYNC.db && !SYNC.on;
+  const msg = wait || SYNC.ro ? '' : !SYNC.db ? (SYNC.noDb ? '<b>Datos solo en este dispositivo.</b> No se han podido abrir los datos compartidos.' : '')
+    : SYNC.badKey ? '<b>La clave de conexión ya no es válida.</b> Abre el enlace nuevo en este dispositivo. Los cambios pendientes se conservan.'
+    : SYNC.offline ? '<b>Sin cobertura.</b> ' + (SYNC.pend ? nCambios(SYNC.pend) + ' guardado' + (SYNC.pend === 1 ? '' : 's') + ' en este dispositivo: se enviará' + (SYNC.pend === 1 ? '' : 'n') + ' al volver la conexión.' : 'Puede que no veas los últimos cambios de los demás.')
+    : SYNC.oldServer ? '<b>El script de Google está desactualizado.</b> Pega la versión nueva y publícala como «Nueva versión» (si no, se pueden pisar cambios).' : '';
+  const warn = !!msg;
   document.body.classList.toggle('syncwait', wait);
   document.body.classList.toggle('syncshow', wait || warn);
   const app = document.getElementById('app'), ctx = document.getElementById('ctx');
   if (app) app.inert = wait; if (ctx) ctx.inert = wait;
-  b.className = 'syncbar' + (wait ? ' wait' + (SYNC.slow ? ' slow' : '') : warn ? ' warn' : '');
-  b.innerHTML = wait ? '<span class="dot" aria-hidden="true"></span><span>' + (SYNC.slow
+  const cls = 'syncbar' + (wait ? ' wait' + (SYNC.slow ? ' slow' : '') : warn ? ' warn' : ''), html = wait ? '<span class="dot" aria-hidden="true"></span><span>' + (SYNC.slow
       ? '<b>Sin conexión con los datos compartidos.</b> Revisa el wifi o los datos móviles; el módulo se desbloquea solo en cuanto vuelva la conexión.'
       : 'Conectando con los datos compartidos…') + '</span>'
-    : warn ? '<span><b>Datos solo en este dispositivo.</b> No se han podido abrir los datos compartidos.</span>' : '';
+    : warn ? '<span>' + msg + '</span>' : '';
+  if (b.className !== cls) b.className = cls; if (b.dataset.h !== html) { b.dataset.h = html; b.innerHTML = html; }
 }
-function typing(){ const a = document.activeElement; return !!a && !dlg.contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !['checkbox','radio','file','button'].includes(a.type)) || a.tagName === 'SELECT') && !!a.closest('main'); }
+function typing(){ const a = document.activeElement; return !!a && !(a.tagName === 'INPUT' && a.id && a.value === '') && !dlg.contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !['checkbox','radio','file','button'].includes(a.type)) || a.tagName === 'SELECT') && !!a.closest('main'); }
 function schedRender(){ if (PEd.cur) { setTimeout(schedRender, 250); return; } if (SYNC.rq) return;
   if (typing()) { if (!SYNC.wait) { SYNC.wait = true; document.addEventListener('focusout', () => { SYNC.wait = false; setTimeout(schedRender, 0); }, {once:true}); } return; }
   SYNC.rq = true; requestAnimationFrame(() => { SYNC.rq = false; if (typing()) { schedRender(); return; } render(); }); }
-function queueSync(){ if (!SYNC.on || SYNC.ro) return; clearTimeout(SYNC.timer); SYNC.timer = setTimeout(flush, 30); }
+function queueSync(){ if (!SYNC.on || SYNC.ro) return; pendSave(); clearTimeout(SYNC.timer); SYNC.timer = setTimeout(flush, 30); }
+
+/* ---- combinar cambios hechos a la vez en dos dispositivos ----
+   base = lo que había antes · mine = lo de este dispositivo · theirs = lo que hay ahora en los datos compartidos */
+const stable = v => v === undefined ? 'u' : v === null || typeof v !== 'object' ? JSON.stringify(v)
+  : Array.isArray(v) ? '[' + v.map(stable).join() + ']' : '{' + Object.keys(v).filter(k => v[k] !== undefined).sort().map(k => JSON.stringify(k) + ':' + stable(v[k])).join() + '}';
+const same = (a, b) => stable(a) === stable(b);
+const isObj = v => !!v && typeof v === 'object' && !Array.isArray(v);
+const parse = s => s ? JSON.parse(s) : null;
+function listKey(x){ if (typeof x === 'string') return x; if (!isObj(x)) return null;
+  return x.id != null ? 'i' + x.id : x.uid != null ? 'u' + [x.uid, x.from, x.ts].join('|') : x.n != null ? 'n' + x.n : stable(x); }
+function merge3(b, m, t){
+  if (same(m, b)) return t; if (same(t, b) || same(m, t)) return m;
+  if (Array.isArray(m) && Array.isArray(t)) {
+    const idx = a => { const o = new Map(); for (const x of (Array.isArray(a) ? a : [])) { const k = listKey(x); if (k === null || o.has(k)) return null; o.set(k, x); } return o; };
+    const B = idx(b), M_ = idx(m), T = idx(t); if (!B || !M_ || !T) return m;
+    const keys = [...T.keys()]; let prev = -1;
+    M_.forEach((v, k) => { const i = keys.indexOf(k); if (i >= 0) prev = i; else keys.splice(++prev, 0, k); });
+    return keys.map(k => merge3(B.get(k), M_.get(k), T.get(k))).filter(x => x !== undefined); }
+  if (isObj(m) && isObj(t)) { const r = {};
+    new Set(Object.keys(t).concat(Object.keys(m))).forEach(k => { const v = merge3(isObj(b) ? b[k] : undefined, m[k], t[k]); if (v !== undefined) r[k] = v; });
+    return r; }
+  return m;
+}
+/* una ubicación: se combinan los bultos uno a uno y las cantidades sumando lo que hizo cada uno */
+function mergeCell(b, m, t, info){
+  if (same(m, b)) return t; if (same(t, b)) return m;
+  const map = c => new Map(items(c).map(x => [x.uid || [x.of, x.date].join('|'), x])), B = map(b), Mi = map(m), T = map(t), out = [];
+  new Set([...T.keys(), ...Mi.keys()]).forEach(k => { const x = B.get(k), y = Mi.get(k), z = T.get(k), n = v => +((v || {}).qty) || 0;
+    if (y && z) { if (!x) { out.push(y); return; } const it = merge3(x, y, z); if (n(y) !== n(x) && n(z) !== n(x)) { it.qty = Math.max(0, n(z) + n(y) - n(x)); if (info) info.qty = true; if (!it.qty) return; } out.push(it); return; }
+    const only = y || z; if (!x) { out.push(only); return; }           /* nuevo en uno de los dos */
+    const d = n(only) - n(x); if (d > 0) out.push(Object.assign({}, only, {qty:d})); });   /* uno lo sacó: solo queda lo que el otro añadió */
+  if (info) B.forEach((x, k) => { if (!Mi.has(k) && !T.has(k)) info.twice = true; });
+  if (out.length) { const st = hasGoods(m) && (!hasGoods(t) || !b || m.state !== b.state) ? m.state : t.state || 'ocupada', n = {state:st};
+    ITEM_F.forEach(f => { if (out[0][f] !== undefined) n[f] = out[0][f]; }); if (out.length > 1) n.more = out.slice(1); return n; }
+  const other = [m, t].find(c => c && c.state && c.state !== 'libre' && !hasGoods(c) && !same(c, b));
+  return other || null;
+}
+const strip = d => { if (!d) return d; const r = Object.assign({}, d); delete r._w; return r; };   /* _w: marcas de quién escribió */
+const cfgNorm = d => JSON.stringify({naves:d.naves, alms:d.alms, expV:d.expV || 0, dev:d.dev || {tabsOcultas:[], devHash:''}});
+function applyCfg(d){ DB.naves = plain(d.naves || []); DB.alms = plain(d.alms || []); DB.expV = d.expV || DB.expV; DB.dev = plain(d.dev || {tabsOcultas:[], devHash:''}); buildIndex(); }
+/* leer-combinar-escribir sin pisar los cambios de otros dispositivos */
+const transact = (ref, fn) => ref.transact(fn);
+
+/* ---- cambios pendientes: se guardan en el dispositivo hasta que llegan a los datos compartidos ---- */
+const PENDKEY = 'recam-logpro-pendientes';
+const connId = () => (sheetsCfg() || {}).url;
+const nCambios = n => n + (n === 1 ? ' cambio' : ' cambios');
+const opsDirty = () => opsJSON() !== (SYNC.ops == null ? '{}' : SYNC.ops);
+const cfgDirty = () => SYNC.role !== 'op' && !!SYNC.cfg && cfgJSON() !== SYNC.cfg;
+function dirtyCells(){ return [...new Set(Object.keys(SYNC.cells).concat(Object.keys(DB.cells)))].filter(k => cellJSON(DB.cells[k]) !== (SYNC.cells[k] ?? null)); }
+function pendSave(){
+  if (!SYNC.synced || SYNC.ro) return;
+  const p = {id:connId(), cells:{}, log:SYNC.logq}; let n = 0;
+  dirtyCells().forEach(k => { p.cells[k] = {b:SYNC.cells[k] ?? null, m:cellJSON(DB.cells[k]), w:SYNC.sent[k] || []}; n++; });
+  if (opsDirty()) { p.ops = {b:SYNC.ops, m:opsJSON()}; n++; }
+  if (cfgDirty()) { p.cfg = {b:SYNC.cfg, m:cfgJSON()}; n++; }
+  if (SYNC.erpDirty) { p.erp = {clear:SYNC.erpDirty.clear, data:DB.erp || null}; n++; }
+  if (SYNC.cliDirty) { p.cli = cliList(); n++; }
+  const moves = new Set(SYNC.logq.map(e => e.id)).size;
+  SYNC.pend = Math.max(n, moves);
+  try { if (SYNC.pend) localStorage.setItem(PENDKEY, JSON.stringify(p)); else localStorage.removeItem(PENDKEY); }
+  catch(e) { if (SYNC.pend && !SYNC.warnQuota) { SYNC.warnQuota = true; toast('Memoria del navegador llena: no cierres la página hasta que se envíen los cambios.'); } }
+}
+function pendRestore(){
+  let p = null; try { p = JSON.parse(localStorage.getItem(PENDKEY) || 'null'); } catch(e) {}
+  if (!p || p.id !== connId() || SYNC.ro) return false;
+  Object.keys(p.cells || {}).forEach(k => { const c = p.cells[k]; if (c.b) SYNC.cells[k] = c.b; else delete SYNC.cells[k]; SYNC.sent[k] = c.w || []; DB.cells[k] = parse(c.m) || {state:'libre'}; });
+  const log = p.log || [], ids = new Set(log.map(e => e.id));
+  SYNC.logq = log.concat(SYNC.logq.filter(e => !ids.has(e.id)));
+  DB.log = log.concat(DB.log.filter(e => !ids.has(e.id))).sort((a, b) => String(b.ts).localeCompare(String(a.ts)));
+  if (p.ops) DB.ops = merge3(parse(p.ops.b) || {}, parse(p.ops.m), plain(DB.ops || {}));
+  if (p.cfg && SYNC.role !== 'op') applyCfg(merge3(parse(p.cfg.b), parse(p.cfg.m), parse(cfgJSON())));
+  if (p.erp) { DB.erp = p.erp.data; SYNC.erpDirty = {clear:p.erp.clear}; }
+  if (p.cli) { DB.clis = p.cli; SYNC.cliDirty = {}; }
+  buildIndex(); return true;
+}
+
+async function pushCells(db){
+  const jobs = dirtyCells().map(k => { const mine = cellJSON(DB.cells[k]), base = SYNC.cells[k] ?? null, stamp = SYNC.tab + '-' + Date.now().toString(36) + (++SYNC.seq);
+    const sent = (SYNC.sent[k] || []).concat({s:stamp, v:mine}).slice(-8); SYNC.sent[k] = sent; return {k, mine, base, stamp, sent}; });
+  if (!jobs.length) return;
+  pendSave();                                  /* las marcas quedan guardadas antes de enviar */
+  let fail = null; const notes = [];
+  for (let i = 0; i < jobs.length; i += 40) {
+    const res = await Promise.allSettled(jobs.slice(i, i + 40).map(async J => { let info = {};
+      const out = await transact(db.collection('cells').doc(J.k), remote => { const r = remote && remote.state ? remote : null, w = (r && r._w) || [];
+        let base = J.base; J.sent.forEach(a => { if (w.includes(a.s)) base = a.v; });     /* ya llegó un envío anterior */
+        const theirs = r ? strip(r) : null; info = {};
+        const merged = mergeCell(parse(base), parse(J.mine), theirs, info);
+        if (!same(theirs, parse(base))) info.other = true;
+        if (!merged || merged.state === 'libre') return null;
+        return same(merged, theirs) ? remote : Object.assign({}, merged, {_w:w.concat(J.stamp).slice(-8)}); });
+      const fin = out ? JSON.stringify(strip(out)) : null, now = cellJSON(DB.cells[J.k]);
+      if (fin) SYNC.cells[J.k] = fin; else delete SYNC.cells[J.k];
+      delete SYNC.sent[J.k];
+      if (now !== fin) { const v = now === J.mine ? parse(fin) : mergeCell(parse(J.mine), parse(now), parse(fin));
+        if (v) DB.cells[J.k] = v; else if (DB.cells[J.k]) DB.cells[J.k] = {state:'libre'};
+        SYNC.merged = true; }
+      if (info.other && fin !== J.mine && (J.sent.length === 1 || fin)) notes.push(J.k + (info.qty ? ' (revisa la cantidad)' : ''));
+      else if (info.twice && J.sent.length === 1) notes.push(J.k + ' (ya lo había sacado otro dispositivo: comprueba que no esté duplicado)');
+    }));
+    const bad = res.find(r => r.status === 'rejected'); if (bad) { fail = bad.reason; break; }
+  }
+  if (notes.length) toast('Cambios simultáneos combinados en ' + notes.slice(0, 3).join(', ') + (notes.length > 3 ? '…' : ''));
+  if (fail) throw fail;
+}
+async function pushDoc(ref, base, current, apply){
+  const mine = current();
+  const out = await transact(ref, remote => base == null || !remote || !Object.keys(remote).length ? JSON.parse(mine) : merge3(JSON.parse(base), JSON.parse(mine), remote));
+  const now = current(), fin = out || {};
+  const local = now === mine ? fin : merge3(JSON.parse(mine), JSON.parse(now), fin);
+  if (JSON.stringify(local) !== now) { if (!same(local, JSON.parse(now))) SYNC.merged = true; apply(plain(local)); }
+  return fin;
+}
+async function pushLog(db){
+  while (SYNC.logq.length) { const batch = SYNC.logq.slice(0, 300), byDay = {};
+    batch.forEach(e => { const d = String(e.ts).slice(0, 10); (byDay[d] = byDay[d] || {})[e.id] = e; });
+    await Promise.all(Object.keys(byDay).map(day => transact(db.collection('log').doc(day), r => ({day, e:Object.assign({}, r && r.e, byDay[day])}))));
+    const done = new Set(batch.map(e => e.id)); SYNC.logq = SYNC.logq.filter(e => !done.has(e.id)); pendSave(); }
+}
 async function flush(){
   if (!SYNC.on || SYNC.ro) return;
-  if (SYNC.busy) { SYNC.again = true; return; } SYNC.busy = true;
-  const db = SYNC.db;
+  if (SYNC.busy) { SYNC.again = true; return; } SYNC.busy = true; clearTimeout(SYNC.retry);
+  const db = SYNC.db; let ok = false;
   try {
-    const cj = cfgJSON(); if (cj !== SYNC.cfg && SYNC.role !== 'op') { await db.doc('config/estructura').set(JSON.parse(cj)); SYNC.cfg = cj; }
-    const oj = opsJSON(); if (oj !== (SYNC.ops == null ? '{}' : SYNC.ops)) { await db.doc('ops/estado').set(JSON.parse(oj)); SYNC.ops = oj; }
-    const keys = new Set(Object.keys(SYNC.cells)); Object.keys(DB.cells).forEach(k => { if (cellJSON(DB.cells[k])) keys.add(k); });
-    await Promise.all([...keys].map(async k => { const cur = cellJSON(DB.cells[k]); if (cur === (SYNC.cells[k] ?? null)) return;
-      const ref = db.collection('cells').doc(k);
-      if (cur) { await ref.set(JSON.parse(cur)); SYNC.cells[k] = cur; } else { await ref.delete(); delete SYNC.cells[k]; } }));
-    while (SYNC.logq.length) { const batch = SYNC.logq.slice(0, 300), byDay = {};
-      batch.forEach(e => { const d = String(e.ts).slice(0, 10); (byDay[d] = byDay[d] || {})[e.id] = e; });
-      await Promise.all(Object.keys(byDay).map(async day => { const ref = db.collection('log').doc(day);
-        try { await ref.update({e:byDay[day]}); } catch(err) { if (err && err.code === 'invalid_argument') await ref.set({day, e:byDay[day]}); else throw err; } }));
-      SYNC.logq.splice(0, batch.length); }
+    if (SYNC.role !== 'op' && cfgJSON() !== SYNC.cfg) { const f = await pushDoc(db.doc('config/estructura'), SYNC.cfg, cfgJSON, applyCfg); SYNC.cfg = cfgNorm(f); }
+    if (opsDirty()) { const f = await pushDoc(db.doc('ops/estado'), SYNC.ops == null ? '{}' : SYNC.ops, opsJSON, v => { DB.ops = v; }); SYNC.ops = JSON.stringify(f); }
+    await pushCells(db);
+    await pushLog(db);
+    if (SYNC.erpDirty) await erpPush(SYNC.erpDirty.clear);
+    if (SYNC.cliDirty) await cliPush();
+    ok = true; SYNC.fails = 0;
   } catch(err) { syncErr(err); }
-  finally { SYNC.busy = false; if (SYNC.again) { SYNC.again = false; flush(); } }
+  finally { SYNC.busy = false;
+    if (ok) { applyCells(); }
+    if (SYNC.merged) { SYNC.merged = false; buildIndex(); try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e) {} schedRender(); }
+    pendSave(); setStatus();
+    if (SYNC.again) { SYNC.again = false; if (ok) flush(); } }
 }
 function revertToRemote(){
   if (SYNC.cfg) { const c = JSON.parse(SYNC.cfg); DB.naves = c.naves; DB.alms = c.alms; DB.dev = c.dev || DB.dev; }
+  if (SYNC.ops != null) DB.ops = JSON.parse(SYNC.ops);
   DB.cells = {}; Object.keys(SYNC.cells).forEach(k => { DB.cells[k] = JSON.parse(SYNC.cells[k]); });
-  const q = new Set(SYNC.logq.map(e => e.id)); DB.log = DB.log.filter(e => !q.has(e.id)); SYNC.logq = [];
+  const q = new Set(SYNC.logq.map(e => e.id)); DB.log = DB.log.filter(e => !q.has(e.id)); SYNC.logq = []; SYNC.sent = {}; SYNC.pend = 0;
+  try { localStorage.removeItem(PENDKEY); } catch(e) {}
   buildIndex(); }
 function syncErr(err){ const code = err && err.code;
   if (code === 'invalid_argument' || code === 'not_granted' || code === 'revoked') { SYNC.ro = true; revertToRemote(); setStatus(); schedRender();
-    toast('Tu acceso es solo de lectura: el cambio no se ha guardado. Pide al propietario acceso de edición.'); return; }
+    toast('Tu acceso es solo de lectura: el cambio no se ha guardado. Avisa al responsable.'); return; }
+  if (code === 'forbidden') return;
+  if (code === 'bad_key') { SYNC.badKey = true; setStatus(); return; }
   if (code === 'quota_exceeded') { toast('La base de datos compartida está llena. Avisa al responsable del módulo.'); return; }
-  if (code === 'resource_exhausted' || code === 'unavailable' || !code) { setTimeout(flush, 2500 + Math.random()*1500); return; }
+  if (code === 'too_large') { toast('Un dato es demasiado grande para la hoja compartida. Avisa al responsable del módulo.'); return; }
+  console.warn('Sincronización: se reintenta', err);
+  /* cualquier otro fallo (sin cobertura, script ocupado…): se reintenta cada vez más espaciado */
+  clearTimeout(SYNC.retry); SYNC.retry = setTimeout(flush, Math.min(30000, 2000 * Math.pow(2, SYNC.fails++)) + Math.random() * 1000);
 }
 function applyCells(){
   if (!SYNC.remoteCfg) return;
@@ -15660,30 +15679,43 @@ function applyCells(){
     if (rem) { DB.cells[k] = JSON.parse(rem); SYNC.cells[k] = rem; } else { DB.cells[k] = {state:'libre'}; delete SYNC.cells[k]; } });
 }
 function seedRemote(){ /* primera vez: sube lo que hay en este equipo */
-  SYNC.seeded = true; SYNC.remoteCfg = true; SYNC.on = true; SYNC.slow = false; SYNC.cfg = null; SYNC.cells = {};
+  SYNC.seeded = true; SYNC.remoteCfg = true; SYNC.on = true; SYNC.synced = true; SYNC.slow = false; SYNC.cfg = null; SYNC.cells = {};
   SYNC.logq = DB.log.slice().reverse().map(e => plain(Object.assign({id: e.id || newLogId()}, e)));
   DB.log.forEach((e, i) => { if (!e.id) e.id = SYNC.logq[SYNC.logq.length - 1 - i].id; });
-  setStatus(); flush(); erpApply(); cliApply(); }
+  setStatus(); pendSave(); flush(); erpApply(); cliApply(); }
+/* se desbloquea cuando han llegado la estructura, las ubicaciones y el muelle (no antes) */
+function tryOnline(){
+  if (SYNC.on || !SYNC.got.cfg || !SYNC.got.cells || !SYNC.got.ops) return;
+  SYNC.on = true; SYNC.slow = false; clearTimeout(SYNC.slowT);
+  const had = pendRestore(); SYNC.synced = true;
+  setStatus(); erpApply(); cliApply(); buildIndex(); ensureExpNames();
+  try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e) {}
+  if (had) toast('Enviando los cambios que quedaron pendientes en este dispositivo');
+  queueSync(); schedRender();
+}
 function startSync(db){
   SYNC.db = db; setStatus();
-  const t = setTimeout(() => { if (!SYNC.on) { SYNC.slow = true; setStatus(); } }, 10000);
-  db.doc('ops/estado').onSnapshot(s => { if (s.metadata && s.metadata.fromCache) return; const j = JSON.stringify(s.exists ? (s.data() || {}) : {}), dirty = SYNC.ops != null && SYNC.on && opsJSON() !== SYNC.ops;
-    SYNC.ops = j; if (dirty && j !== opsJSON()) queueSync(); else if (j !== opsJSON()) { DB.ops = JSON.parse(j); schedRender(); } }, syncErr);
+  SYNC.slowT = setTimeout(() => { if (!SYNC.on) { SYNC.slow = true; setStatus(); } }, 10000);
+  const live = s => !(s.metadata && s.metadata.fromCache);
+  db.doc('ops/estado').onSnapshot(s => { if (!live(s)) return; const r = s.exists ? plain(s.data() || {}) : {}, j = JSON.stringify(r);
+    if (SYNC.on && !SYNC.ro && SYNC.ops != null && opsDirty()) { const m = merge3(JSON.parse(SYNC.ops), JSON.parse(opsJSON()), r); SYNC.ops = j; if (!same(m, DB.ops)) { DB.ops = plain(m); schedRender(); } queueSync(); }
+    else { SYNC.ops = j; if (j !== opsJSON()) { DB.ops = JSON.parse(j); schedRender(); } }
+    SYNC.got.ops = true; tryOnline(); }, syncErr);
   db.doc('config/estructura').onSnapshot(s => {
-    if (s.exists) {
-      const d = s.data() || {}, j = JSON.stringify({naves:d.naves, alms:d.alms, expV:d.expV || 0, dev:d.dev || {tabsOcultas:[], devHash:''}});
+    const d = s.exists ? s.data() || {} : null;
+    if (d && Array.isArray(d.alms)) {
+      const j = cfgNorm(d);
       if (!SYNC.remoteCfg) { SYNC.remoteCfg = true; DB.cells = {}; SYNC.cells = {}; } /* al conectar mandan los datos compartidos */
-      const dirty = SYNC.cfg != null && SYNC.on && !SYNC.ro && SYNC.role !== 'op' && cfgJSON() !== SYNC.cfg;
-      SYNC.cfg = j;
-      if (dirty && j !== cfgJSON()) queueSync();
-      else if (j !== cfgJSON()) { DB.naves = plain(d.naves || []); DB.alms = plain(d.alms || []); DB.expV = d.expV || DB.expV; DB.dev = plain(d.dev || {tabsOcultas:[], devHash:''}); }
-      buildIndex(); applyCells(); buildIndex(); if (ensureExpNames()) render();
-      if (!s.metadata.fromCache && !SYNC.on) { SYNC.on = true; SYNC.slow = false; clearTimeout(t); setStatus(); erpApply(); cliApply(); try { localStorage.setItem(KEY, JSON.stringify(DB)); } catch(e) {} }
+      if (SYNC.on && !SYNC.ro && cfgDirty() && j !== SYNC.cfg) { const m = merge3(JSON.parse(SYNC.cfg), JSON.parse(cfgJSON()), JSON.parse(j)); SYNC.cfg = j; applyCfg(m); queueSync(); }
+      else if (!(SYNC.on && !SYNC.ro && cfgDirty())) { SYNC.cfg = j; if (j !== cfgJSON()) applyCfg(JSON.parse(j)); }
+      buildIndex(); applyCells(); buildIndex(); if (live(s)) { SYNC.got.cfg = true; tryOnline(); }
+      if (SYNC.on && ensureExpNames()) render();
       schedRender();
-    } else if (!s.metadata.fromCache && !SYNC.seeded && !SYNC.remoteCfg && SYNC.role !== 'op') { clearTimeout(t); seedRemote(); }
+    } else if (live(s) && !SYNC.seeded && !SYNC.remoteCfg && SYNC.role !== 'op') { clearTimeout(SYNC.slowT); seedRemote(); }
   }, syncErr);
-  db.collection('cells').onSnapshot(q => { const m = {}; q.docs.forEach(d => { m[d.id] = JSON.stringify(d.data()); }); SYNC.remoteCells = m; if (!q.metadata || !q.metadata.fromCache) SYNC.cellsReady = true;
-    if (SYNC.remoteCfg) { applyCells(); buildIndex(); ensureExpNames(); schedRender(); } }, syncErr);
+  db.collection('cells').onSnapshot(q => { const m = {}; q.docs.forEach(d => { const c = d.data(); if (c && c.state) m[d.id] = JSON.stringify(strip(c)); }); SYNC.remoteCells = m; if (live(q)) SYNC.cellsReady = true;
+    if (SYNC.remoteCfg) { applyCells(); buildIndex(); if (live(q)) { SYNC.got.cells = true; tryOnline(); } if (SYNC.on) ensureExpNames(); schedRender(); }
+    else if (live(q)) SYNC.got.cells = true; }, syncErr);
   erpSubscribe(db);
   cliSubscribe(db);
   db.collection('log').orderBy('day', 'desc').limit(120).onSnapshot(q => { if (!SYNC.remoteCfg) return; const arr = [];
@@ -15691,15 +15723,9 @@ function startSync(db){
     const have = new Set(arr.map(x => x.id)); const pend = SYNC.logq.filter(x => !have.has(x.id));
     DB.log = pend.concat(arr).sort((a, b) => String(b.ts).localeCompare(String(a.ts))); schedRender(); }, syncErr);
 }
-async function initSync(){
-  const sc = sheetsCfg();
-  if (sc) { SYNC.mode = 'sheets'; SYNC.db = 'pending'; setStatus(); startSync(sheetsDb(sc)); return; }
-  if (!(window.claude && typeof window.claude.use === 'function')) { setStatus(); return; }
-  SYNC.db = 'pending'; setStatus();
-  let db = null; try { db = await window.claude.use('db'); } catch(e) {}
-  if (!db) { SYNC.db = null; SYNC.noDb = true; setStatus(); return; }
-  try { const u = await window.claude.use('user'); if (u) { const w = await u.can('data.write'); if (w === false) SYNC.ro = true; } } catch(e) {}
-  startSync(db);
+function initSync(){
+  const sc = sheetsCfg(); if (!sc) { setStatus(); return; }
+  SYNC.mode = 'sheets'; SYNC.db = 'pending'; setStatus(); startSync(sheetsDb(sc));
 }
 async function resetRemote(){
   if (!SYNC.on || SYNC.ro) return;
@@ -15723,7 +15749,7 @@ function devLogin(){
 function devPanel(){
   const cfg = devCfg(), ro = typeof SYNC !== 'undefined' && SYNC.ro;
   openDlg('<h2>Modo desarrollador</h2>'
-    + (ro ? '<div class="err" style="font-size:13px">Tu acceso a este artefacto es de solo lectura: puedes ver la configuración, pero los cambios no se guardarán.</div>' : '')
+    + (ro ? '<div class="err" style="font-size:13px">Tu acceso es de solo lectura: puedes ver la configuración, pero los cambios no se guardarán.</div>' : '')
     + '<h3>Pestañas visibles</h3><p class="hint" style="margin:0">Las pestañas desmarcadas se ocultan para todos los usuarios' + (typeof SYNC !== 'undefined' && SYNC.on ? ' (se guarda en los datos compartidos)' : ' de este equipo') + '. Siguen funcionando si se abren con su enlace (#mapa, #pda…). En modo desarrollador las ves con borde discontinuo.</p>'
     + '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px">' + Object.keys(TAB_NAMES).map(t => '<label style="display:flex;gap:8px;align-items:center;border:1px solid var(--line2);border-radius:6px;padding:8px 10px;font-size:14px"><input type="checkbox" class="devtab" value="' + t + '"' + (cfg.tabsOcultas.includes(t) ? '' : ' checked') + '>' + TAB_NAMES[t] + '</label>').join('') + '</div>'
     + '<h3>Cambiar código de desarrollador</h3><div class="g2"><label class="f">Código nuevo<input id="dev_n1" class="input" type="password" autocomplete="new-password"></label><label class="f">Repítelo<input id="dev_n2" class="input" type="password" autocomplete="new-password"></label></div><p class="hint" style="margin:0">Déjalo en blanco para no cambiarlo. Mínimo 4 caracteres.</p>'
@@ -15746,7 +15772,6 @@ A.devSaveYes = () => {
 };
 
 /* ================= PDA en un móvil Android (pantalla completa, cámara) ================= */
-const ART_URL = appBase() || 'https://claude.ai/artifact/YF3YqJJHqApfuiEDqc9Zqx';
 const PDKEY = 'recam-logpro-pda';
 const IS_TOUCH = (() => { try { return matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window; } catch(e) { return false; } })();
 const PDEV = (() => { try { return Object.assign({full:false, op:'', lector:'camara'}, JSON.parse(localStorage.getItem(PDKEY) || '{}')); } catch(e) { return {full:false, op:'', lector:'camara'}; } })();
@@ -15808,15 +15833,14 @@ A.pdaSetupYes = () => { const op = val('pd_op'); if (!op) return dlgErr('Escribe
   dlg.close(); Object.assign(UI.pda, {mode:'menu', step:0, d:{}, msg:null, input:''}); UI.tab = 'pda'; try { history.replaceState(null, '', '#pda'); } catch(e) {} render(); window.scrollTo(0, 0); };
 A.pdaExitAsk = () => openDlg('<h2>Salir del modo PDA</h2><p style="margin:0">Para volver al módulo completo en este dispositivo, escribe el código de desarrollador.</p><label class="f">Código<input id="pd_code" class="input" type="password" autocomplete="off"></label>' + btnRow('pdaExitYes', 'Salir', 'btn-danger'));
 A.pdaExitYes = () => { const cfg = devCfg(); if (devHash(val('pd_code')) !== (cfg.devHash || devHash(DEV_DEF))) return dlgErr('Código incorrecto.'); PDEV.full = false; savePdev(); dlg.close(); render(); toast('Este dispositivo vuelve al módulo completo'); };
-A.appCopyLink = async () => { try { await navigator.clipboard.writeText(ART_URL); toast('Enlace copiado'); } catch(e) { const i = $('#appLink'); if (i) { i.focus(); i.select(); } toast('Selecciona el enlace y cópialo'); } };
-A.pdaCopyLink = async () => { try { await navigator.clipboard.writeText(ART_URL + '#pda'); toast('Enlace copiado'); } catch(e) { const i = $('#pdaLink'); if (i) { i.focus(); i.select(); } toast('Selecciona el enlace y cópialo'); } };
 function androidCard(){
-  let qr = ''; try { const g = qrcode(0, 'M'); g.addData(ART_URL + '#pda'); g.make(); qr = '<img src="' + g.createDataURL(5, 2) + '" alt="QR con el enlace a la PDA" width="180" height="180" style="display:block;image-rendering:pixelated">'; } catch(e) {}
-  return '<div class="card pdanotes"><h2>Abrir el módulo en otros dispositivos</h2><p class="muted" style="font-size:14px;margin:6px 0 0">PC, tablet y móvil trabajan sobre los mismos datos: cualquier cambio aparece al momento en todos.</p><div class="row" style="align-items:flex-start;gap:14px;margin-top:10px;flex-wrap:nowrap">' + qr + (appBase() ? '<ol style="padding-left:18px;font-size:14px;line-height:1.5;margin:0"><li>Para que el móvil quede ya conectado a los datos, usa mejor <b>Naves y almacenes → Conexión de datos → Enlace para otros dispositivos</b>.</li><li>En el móvil, abre el enlace <b>en Chrome</b>. Al abrirse en un móvil, el módulo entra directamente en la pestaña PDA.</li>' : '<ol style="padding-left:18px;font-size:14px;line-height:1.5;margin:0"><li>Una sola vez, en el ordenador: botón <b>Compartir</b> del artefacto → da acceso de edición a cada persona del almacén (o a tu organización). Sin acceso de edición solo pueden consultar.</li><li>En el móvil, escanea este QR y ábrelo <b>en Chrome</b> (si sale una vista previa, pulsa «Abrir en Chrome»).</li><li>Inicia sesión en claude.ai con esa cuenta. Al abrirse en un móvil, el módulo entra directamente en la pestaña PDA.</li>') + '<li>Pulsa <b>Usar este dispositivo como PDA</b>, pon el nombre del operario y elige la cámara. Las tablets abren el mapa, como el PC.</li><li>En Chrome, menú ⋮ → <b>Añadir a pantalla de inicio</b>, para abrirlo como una app.</li></ol></div>'
-    + '<label class="f" style="margin-top:12px">Enlace del módulo (PC y tablet)<div class="row" style="flex-wrap:nowrap"><input id="appLink" class="input mono" readonly value="' + ART_URL + '" style="flex:1;font-size:12px"><button type="button" class="btn btn-sm" data-a="appCopyLink">Copiar</button></div></label>'
-    + '<label class="f" style="margin-top:12px">Enlace de la PDA (móvil)<div class="row" style="flex-wrap:nowrap"><input id="pdaLink" class="input mono" readonly value="' + ART_URL + '#pda" style="flex:1;font-size:12px"><button type="button" class="btn btn-sm" data-a="pdaCopyLink">Copiar</button></div></label>'
-    + '<div class="row" style="margin-top:12px"><button type="button" class="btn btn-pri" data-a="pdaSetup">Usar este dispositivo como PDA</button></div>'
-    + '<p class="muted" style="font-size:13px;margin:10px 0 0">Si el móvil abre el archivo HTML descargado en vez del enlace, funciona igual pero con datos solo de ese móvil.</p></div>';
+  const c = sheetsCfg(), web = !!appBase();
+  const paso = !web ? 'Abre el módulo desde su dirección web (la de GitHub Pages), no desde el archivo descargado.'
+    : !c ? 'Primero conecta este equipo a la Hoja de Google, en <b>Conexión de datos</b>.'
+    : 'Pulsa el botón y escanea el QR con el móvil o la tablet. No hace falta ninguna cuenta.';
+  return '<div class="card pdanotes"><h2>Abrir el módulo en otros dispositivos</h2><p class="muted" style="font-size:14px;margin:6px 0 0">PC, tablet y móvil trabajan sobre los mismos datos: los cambios llegan a todos en unos segundos.</p>'
+    + '<ol style="padding-left:18px;font-size:14px;line-height:1.5;margin:10px 0 0"><li>' + paso + '</li><li>En el móvil, abre el enlace <b>en Chrome</b>. Al abrirse en un móvil, el módulo entra directamente en la pestaña PDA.</li><li>Pulsa <b>Usar este dispositivo como PDA</b>, pon el nombre del operario y elige la cámara. Las tablets abren el mapa, como el PC.</li><li>En Chrome, menú ⋮ → <b>Añadir a pantalla de inicio</b>, para abrirlo como una app.</li></ol>'
+    + '<div class="row" style="margin-top:12px">' + (web && c ? '<button type="button" class="btn btn-pri" data-a="shLink" data-r="op">' + (isOp() ? 'QR para otro operario' : 'QR y enlace para operarios') + '</button>' : '') + '<button type="button" class="btn" data-a="pdaSetup">Usar este dispositivo como PDA</button></div></div>';
 }
 
 /* ================= MAPA 3D: vista por defecto del plano =================
@@ -16113,8 +16137,7 @@ load(); loadUI();
 const h0 = (location.hash || '').slice(1); if (VIEWS[h0]) UI.tab = h0;
 if (!VIEWS[h0] && (PDEV.full || SMALL_TOUCH || WANT_PDA)) UI.tab = 'pda';
 render();
-initChat();
 initSync();
-window.addEventListener('hashchange', () => { const h = (location.hash || '').slice(1); if (VIEWS[h] && h !== UI.tab) { UI.tab = h; render(); window.scrollTo(0, 0); } });
+window.addEventListener('hashchange', () => { if (cfgFromHash()) { location.reload(); return; } const h = (location.hash || '').slice(1); if (VIEWS[h] && h !== UI.tab) { UI.tab = h; render(); window.scrollTo(0, 0); } });
 })();
 </script></body></html>
